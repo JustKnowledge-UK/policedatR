@@ -1,9 +1,10 @@
 Package: policedatR
-Title: What the Package Does (One Line, Title Case)
+Title: policedatR: A package for acquiring, augmenting and analysing stop and search data
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+    person("Jolyon", "Miles-Wilson", , "jolyon.miles-wilson@justknowledge.org.uk", role = c("aut", "cre"))
+    person("Celestin","Okoroji", , "celestin.okoroji@justknowledge.org.uk", role = c("aut","cre"))
+Description: An R package for acquiring, augmenting and analysing stop and search data from the UK Police API.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
