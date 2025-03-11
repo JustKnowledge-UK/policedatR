@@ -13,3 +13,6 @@ RoxygenNote: 7.3.2
 Imports: 
     dplyr,
     httr
+Depends: 
+    R (>= 3.5)
+LazyData: true
