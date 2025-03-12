@@ -1,14 +1,18 @@
 # 2025-03-11
 # A script for compiling the geography lookup
 
+rm(list = ls())
 library(httr)
 library(jsonlite)
 library(dplyr)
-library(tidyr)
-library(readr)
 library(janitor)
 library(stringr)
-library(sf)
+
+###################################
+#### OA to LSOA to MSOA to LAD ####
+###################################
+
+# These are 2021 OAs and 2022 LADs (post 2021 changes, pre 2023 changes)
 
 # API endpoint
 base_url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/OA_LSOA_MSOA_EW_DEC_2021_LU_v3/FeatureServer/0/query"
@@ -52,50 +56,78 @@ repeat {
 # Combine all results into a single sf object
 final_df <- dplyr::bind_rows(all_results)
 
-final_df <- final_df %>%
+oa_lsoa_msoa_lad <- final_df %>%
   janitor::clean_names() %>%
   dplyr::rename_with(~stringr::str_replace(.x, "attributes.","")) %>%
   dplyr::select(-c(lsoa21nmw, msoa21nmw,lad22nmw, object_id))
 
 
-### add below programatically!
+
 ###########################
 #### LAD to PFA lookup ####
 ###########################
 
-# Use list.files to get all CSV files in the directory
-files <- list.files(path = path, pattern = 'Local_Authority_District_to_CSPs*', full.names = TRUE)
+# Ideally we'd keep CSPs as they could be useful in future. But there is a many-
+# to-many relationship between LADs and CSPs, so for convenience I have decided
+# to drop them.
 
-lad_pfa_lookup <- readr::read_csv(files[1]) %>%
+base_url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/LAD22_CSP22_PFA22_EW_LU/FeatureServer/0/query"
+
+params <- list(
+  where = "1=1",
+  outFields = "*",
+  f = "json"
+)
+
+response <- httr::GET(base_url, query = params)
+
+json_data <- httr::content(response, as = "text")
+list_data <- jsonlite::fromJSON(json_data, flatten = TRUE)
+lad_pfa <- tibble::as_tibble(list_data$features) %>%
   janitor::clean_names() %>%
-  select(lad23cd, lad23nm, pfa23cd, pfa23nm) %>%
+  dplyr::rename_with(~stringr::str_replace(.x, "attributes.","")) %>%
+  select(-c(csp22cd, csp22nm, object_id)) %>%
   distinct()
+
 
 #######################
 #### LAD to Region ####
 #######################
 
-# Use list.files to get all CSV files in the directory
-files <- list.files(path = path, pattern = 'Local_Authority_District_to_Region*', full.names = TRUE)
+base_url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/LAD22_RGN22_EN_LU/FeatureServer/0/query"
 
-lad_region_lookup <- readr::read_csv(files[1]) %>%
+params <- list(
+  where = "1=1",
+  outFields = "*",
+  f = "json"
+)
+
+response <- httr::GET(base_url, query = params)
+
+json_data <- httr::content(response, as = "text")
+list_data <- jsonlite::fromJSON(json_data, flatten = TRUE)
+lad_region <- tibble::as_tibble(list_data$features) %>%
   janitor::clean_names() %>%
-  select(-object_id) %>%
-  distinct()
+  dplyr::rename_with(~stringr::str_replace(.x, "attributes.","")) %>%
+  select(-object_id)
+
 
 #############################
 #### Combine the lookups ####
 #############################
 
-# combine lad with region first to inspect difference in number of lads
-# shows that 'region' is missing from wales, so we set 'Wales' as the region
-lad_pfa_region <- lad_pfa_lookup %>%
-  left_join(lad_region_lookup %>% select(-lad23nm), by="lad23cd") %>%
+area_lookup <- oa_lsoa_msoa_lad %>%
+  left_join(lad_pfa, by = c("lad22cd", "lad22nm")) %>%
+  left_join(lad_region, by = c("lad22cd", "lad22nm")) %>%
+  # "Fill in" the region for Welsh areas as 'Wales'
   mutate(
-    rgn23nm = ifelse(stringr::str_starts(lad23cd, "W"), "Wales", rgn23nm)
+    rgn22nm = ifelse(stringr::str_starts(lad22cd, "W"), "Wales", rgn22nm),
+    rgn22cd = ifelse(stringr::str_starts(lad22cd, "W"), "Wales", rgn22cd),
   )
 
-# now combine with the lsoas
-combined_geos <- lsoa_lad_lookup %>%
-  left_join(lad_pfa_region %>% select(-'lad23nm'), by='lad23cd')
+# Add the data to sysdata.rda to be used by the package (but not accessible by
+# user; cf exported data)
+usethis::use_data(area_lookup,
+                  # add other data here
+                  internal = TRUE)
 
