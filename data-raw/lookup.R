@@ -1,4 +1,5 @@
 # 2025-03-11
+# Jolyon Miles-Wilson
 # A script for compiling the geography lookup
 
 rm(list = ls())
@@ -21,8 +22,6 @@ base_url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/
 result_offset <- 0
 max_records <- 1000 # GeoPortal limits max records at a time to 2000
 all_results <- list()
-# all_results2 <- c()
-# batch_size <- 90 # GeoPortal limits max WHERE to 90
 
 repeat {
   # Define query parameters with pagination
@@ -39,28 +38,34 @@ repeat {
   response <- httr::GET(base_url, query = params)
 
   if (httr::status_code(response) == 200) {
+    # Get content
     json_data <- httr::content(response, as = "text")
+    # Read from JSON
     chunk <- jsonlite::fromJSON(json_data, flatten = TRUE)
+    # Convert to tibble
     tibble_chunk <- tibble::as_tibble(chunk$features)
 
     # Stop if no more records
     if (nrow(tibble_chunk) == 0) break
 
+    # Append results
     all_results <- base::append(all_results, list(tibble_chunk))
+
+    # Advance the offset for next batch
     result_offset <- result_offset + max_records
   } else {
     stop(paste("Error:", httr::status_code(response)))
   }
 }
 
-# Combine all results into a single sf object
+# Combine all results into a single df
 final_df <- dplyr::bind_rows(all_results)
 
+# Tidy up the df
 oa_lsoa_msoa_lad <- final_df %>%
   janitor::clean_names() %>%
   dplyr::rename_with(~stringr::str_replace(.x, "attributes.","")) %>%
   dplyr::select(-c(lsoa21nmw, msoa21nmw,lad22nmw, object_id))
-
 
 
 ###########################
@@ -70,6 +75,8 @@ oa_lsoa_msoa_lad <- final_df %>%
 # Ideally we'd keep CSPs as they could be useful in future. But there is a many-
 # to-many relationship between LADs and CSPs, so for convenience I have decided
 # to drop them.
+
+# Becuase there are only 331 LADs there is no need to paginate
 
 base_url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/LAD22_CSP22_PFA22_EW_LU/FeatureServer/0/query"
 
@@ -81,8 +88,12 @@ params <- list(
 
 response <- httr::GET(base_url, query = params)
 
+# Get JSON data
 json_data <- httr::content(response, as = "text")
+# Read JSON data
 list_data <- jsonlite::fromJSON(json_data, flatten = TRUE)
+
+# Convert to tibble and tidy
 lad_pfa <- tibble::as_tibble(list_data$features) %>%
   janitor::clean_names() %>%
   dplyr::rename_with(~stringr::str_replace(.x, "attributes.","")) %>%
@@ -94,6 +105,8 @@ lad_pfa <- tibble::as_tibble(list_data$features) %>%
 #### LAD to Region ####
 #######################
 
+# No need to paginate as LADS = 309
+
 base_url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/LAD22_RGN22_EN_LU/FeatureServer/0/query"
 
 params <- list(
@@ -104,8 +117,11 @@ params <- list(
 
 response <- httr::GET(base_url, query = params)
 
+# Get JSON data
 json_data <- httr::content(response, as = "text")
+# Read JSON data
 list_data <- jsonlite::fromJSON(json_data, flatten = TRUE)
+# Convert to tibble and tidy
 lad_region <- tibble::as_tibble(list_data$features) %>%
   janitor::clean_names() %>%
   dplyr::rename_with(~stringr::str_replace(.x, "attributes.","")) %>%
