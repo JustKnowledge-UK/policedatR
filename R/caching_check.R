@@ -64,4 +64,5 @@ caching_check <- function(reset = FALSE){
   }
 
   Sys.setenv(caching = caching_status)
+  Sys.setenv(cache_dir = cache_dir)
 }
