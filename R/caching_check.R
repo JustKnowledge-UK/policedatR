@@ -90,7 +90,6 @@ caching_check <- function(reset = FALSE){
     if(!dir.exists(cache_dir)){
       cat(paste0("Caching set to ", caching_status, " but no cache directory detected. Use caching_check(reset = TRUE) to create one."))
       caching_status <- caching_status
-      break
     }
     else{
       cat(paste0("Caching set to ", caching_status, "\nCache directory exists at ", cache_dir, "\nUse caching_check(reset = TRUE) to reset this option."))
