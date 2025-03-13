@@ -1,33 +1,47 @@
-get_lad_geometries <- function(caching = TRUE){
+#' Get Local Authority District geometries
+#'
+#' Acquire geometry data from geoportal.gov.uk for Local Authority Districts as
+#' at December 2022.
+#'
+#' @returns A tibble of geometries where each row is local authority district
+#' @export
+#'
+#' @examples lad_geometries <- get_lad_geometries()
+#'
+get_lad_geometries <- function(){
 
   # API endpoint
   base_url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Local_Authority_Districts_December_2022_UK_BFC_V2/FeatureServer/0/query"
 
-  # response <- httr::GET(base_url, query = list(where = "1=1", outFields = "*", outSR = "4326", f = "geojson"))
   # Create cache directory - but ask user to agree
-  cache_dir <- rappdirs::user_cache_dir(appname = NULL, appauthor = "policedatR")
-  if(!dir.exists(cache_dir)){
-    # repeat check until either y or n has been pressed
-    repeat{
-      check <- readline("We recommend caching the data acquired from geoportal.gov.uk
-so that repeat queries can run faster. Do you want to create a local cache to save queries? (y/n)")
-      if(check == "y"){
-        print(paste0("Creating cache at ", cache_dir))
-        dir.create(cache_dir, recursive = TRUE)
-        break
-      }
-      else if(check == "n"){
-        print("Not caching data. Repeat queries won't be quicker.")
-        break
-      }
-      else{
-        print("Please type either 'y' or 'n' and press Enter")
-      }
-    }
-  }
-  else {
-    print(paste0("Cache detected. Files will be saved to ", cache_dir))
-  }
+  caching_check()
+  caching <- Sys.getenv("caching")
+  cache_dir <- Sys.getenv("cache_dir")
+  # This might be better in its own function
+
+#   cache_dir <- rappdirs::user_cache_dir(appname = NULL, appauthor = "policedatR")
+#   if(!dir.exists(cache_dir)){
+#     # repeat check until either y or n has been pressed
+#     repeat{
+#       check <- readline("We recommend caching the data acquired from geoportal.gov.uk
+# so that repeat queries can run faster. Do you want to create a local cache to save queries? (y/n)")
+#       if(check == "y"){
+#         print(paste0("Creating cache at ", cache_dir))
+#         dir.create(cache_dir, recursive = TRUE)
+#         break
+#       }
+#       else if(check == "n"){
+#         print("Not caching data. Repeat queries won't be quicker.")
+#         break
+#       }
+#       else{
+#         print("Please type either 'y' or 'n' and press Enter")
+#       }
+#     }
+#   }
+#   else {
+#     print(paste0("Cache detected. Files will be saved to ", cache_dir))
+#   }
 
   # Initialise and specify parameters for the query
   all_results <- list()
@@ -60,11 +74,11 @@ so that repeat queries can run faster. Do you want to create a local cache to sa
   }
 
   t1 <- Sys.time()
-  print("Starting request")
+  cat("\nStarting request")
   response <- fetch_data(where_clause)  # First call fetches from API
   t2 <- Sys.time()
   time_elapsed <- t2 - t1
-  print(paste0("Request done in: ", time_elapsed, " seconds"))
+  cat(paste0("\nRequest done in: ", time_elapsed, " seconds"))
 
   geojson_data <- httr::content(response, as = "text")
   # Translate to sf object
