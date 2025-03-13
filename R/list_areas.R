@@ -22,6 +22,6 @@ list_areas <- function(area_type = "lad"){
                     "lad" = "lad22nm")
 
   area_lookup %>%
-    distinct(.data[[area_dict[[area_type]]]]) %>%
-    pull()
+    dplyr::distinct(.data[[area_dict[[area_type]]]]) %>%
+    dplyr::pull()
 }
