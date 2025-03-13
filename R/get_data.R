@@ -20,7 +20,7 @@ get_oa_data <- function(area = NULL,
                       restrict you query using 'area'. Do you want to continue
                       acquiring data for all Output Areas? (y/n)")
     if(check == "n"){
-      break
+      stop()
     } else{
       print("Acquiring data for all Output Areas")
     }
