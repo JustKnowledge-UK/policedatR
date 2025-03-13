@@ -75,7 +75,7 @@ get_lad_geometries <- function(subset = NULL){
     lad_geometries <- sf::st_read(geojson_data, quiet = TRUE) %>%
       # Tidy up
       janitor::clean_names() %>%
-      select(lad22cd, lad22nm, shape_area, geometry)
+      dplyr::select(lad22cd, lad22nm, shape_area, geometry)
   }
   else{
     # If a subset has been requested, run in chunks of 90. This is limit set by API
@@ -116,7 +116,7 @@ get_lad_geometries <- function(subset = NULL){
     lad_geometries <- dplyr::bind_rows(all_results) %>%
       # Tidy up
       janitor::clean_names() %>%
-        select(lad22cd, lad22nm, shape_area, geometry)
+        dplyr::select(lad22cd, lad22nm, shape_area, geometry)
   }
 
 
