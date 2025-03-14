@@ -383,7 +383,7 @@ get_lad_data <- function(subset = NULL,
       } else{
         # cat("nrow not 0")
         # if stops were found for this area, add in the areas to the front
-        area_output <- bind_cols(areas_df, area_output)
+        area_output <- dplyr::bind_cols(areas_df, area_output)
       }
     }
 
