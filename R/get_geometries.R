@@ -126,7 +126,7 @@ get_lad_geometries <- function(subset = NULL){
 
 
 
-get_msoa_geometries <- function(subset = NULL){
+get_msoa_geometries <- function(subset = NULL, result_offset = 0, max_records = 2000){
 
   # API endpoint
   base_url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Middle_layer_Super_Output_Areas_December_2021_Boundaries_EW_BFC_V7/FeatureServer/0/query"
@@ -152,27 +152,46 @@ get_msoa_geometries <- function(subset = NULL){
       resultRecordCount = max_records
     )
 
+    # Initialise 504. Geoportal API saves 504 error to response content, so we
+    # have to look there for the error. But let's only look when it seems likely
+    # the request failed. we do this by using the length of the response - if it
+    # looks really short, it's probably failed, so take a look and see if indeed
+    # an error is reported
+    error_504 <- FALSE
+
     response <- httr::GET(base_url, query = params)
-    if (httr::status_code(response) == 200) {
-      #content(response, "text")  # Convert response to text for caching
+
+    if(length(response[["content"]]) < 1000){
+      peek_content <- httr::content(response, as = "text")
+      if(grepl("error", peek_content, ignore.case = TRUE) && grepl("504", peek_content)){
+        error_504 <- TRUE
+        #max_records <- max_records / 2
+      }
+      else {
+        error_504 <- FALSE
+      }
+    }
+    if (httr::status_code(response) == 200 && error_504 == FALSE) { # add check in body for 504
       return(response)
+      #content(response, "text")  # Convert response to text for caching
     }
     else {
-      stop(paste("Error:", httr::status_code(response)))
+      stop(paste("Error: Status code ", httr::status_code(response)," (but body may contain 504)"))
     }
   }
 
 
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
-    # Memoise the function
+
+        # Memoise the function
     fetch_data <- memoise::memoise(fetch_data, cache = cd)
   }
 
   # Initialise
   all_results <- list()
-  result_offset <- 0
-  max_records <- 2000
+  # result_offset <- 0
+  # max_records <- 2000
 
   # Subset options. Build on this later
   if(is.null(subset)){
@@ -185,7 +204,13 @@ get_msoa_geometries <- function(subset = NULL){
     # Repeat the request in 2000 record batches
     repeat{
 
-      response <- fetch_data(where_clause, result_offset, max_records)
+      # Pick up here on 2025-03-25
+      # while(try <= max_tries){
+      #   try(
+          response <- fetch_data(where_clause, result_offset, max_records)
+      #   )
+      # }
+
       geojson_data <- httr::content(response, as = "text")
       # Translate to sf object
       sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
