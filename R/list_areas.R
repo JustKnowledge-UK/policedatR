@@ -25,3 +25,22 @@ list_areas <- function(area_type = "lad"){
     dplyr::distinct(.data[[area_dict[[area_type]]]]) %>%
     dplyr::pull()
 }
+
+
+#' Show area variable names
+#'
+#' Display the variable names of areas. Useful for checking what variables can
+#' be used for subsetting requests.
+#'
+#' @returns A character vector of area variable names from the area lookup.
+#'
+#' @export
+#'
+#' @examples
+#'
+#' # List the areas
+#' area_variables()
+#'
+area_variables <- function(){
+  colnames(area_lookup)
+}
