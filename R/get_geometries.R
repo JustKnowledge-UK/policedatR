@@ -126,11 +126,40 @@ get_lad_geometries <- function(subset = NULL){
 
 
 
-get_msoa_geometries <- function(subset = NULL, result_offset = 0, max_records = 2000){
+#' Get Middle layer Super Output Area geometries
+#'
+#' Acquire geometry data from geoportal.gov.uk for Middle layer Super Output Area (MSOAs) as
+#' at December 2021.
+#'
+#' @param subset A named list defining the areas for which to acquire geometries. Names
+#' correspond to the variable on which to subset (run policedatR::area_variables() to see options for areas on which to subset).
+#' Values correspond to the desired values of the variable. Values can be single
+#' strings or character vectors.
+#'
+#' If NULL, will acquire all MSOA geometries and will take around 5 minutes.
+#'
+#' @returns An sf data frame where each row is a MSOA, with columns msoa21cd, msoa21nm,
+#' shape_area and geometry.
+#'
+#' @export
+#'
+#' @examples
+#'
+#' # Get all MSOAs
+#' all_msoas <- get_msoa_geometries()
+#'
+#' # Get MSOAs in the Greater London region
+#' london_msoas <- get_msoa_geometries(subset = list("rgn22nm" = "London"))
+#'
+#' # Get MSOAs just in Haringey and Waltham Forest
+#' haringey_waltham_msoas <- get_msoa_geometries(subset = list("lad22nm" = c("Haringey", "Waltham Forest")))
+#'
+get_msoa_geometries <- function(subset = NULL){
 
   # API endpoint
   base_url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Middle_layer_Super_Output_Areas_December_2021_Boundaries_EW_BFC_V7/FeatureServer/0/query"
-
+  result_offset <- 0 # We may want the user to be able specify this
+  max_records <- 2000 # We may want the user to be able specify this
   # Create cache directory - but ask user to agree
   policedatR::caching_check()
   caching <- Sys.getenv("caching")
@@ -180,11 +209,10 @@ get_msoa_geometries <- function(subset = NULL, result_offset = 0, max_records = 
     }
   }
 
-
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
 
-        # Memoise the function
+    # Memoise the function
     fetch_data <- memoise::memoise(fetch_data, cache = cd)
   }
 
@@ -201,15 +229,36 @@ get_msoa_geometries <- function(subset = NULL, result_offset = 0, max_records = 
 
     t1 <- Sys.time()
     cat("\nStarting request.")
-    # Repeat the request in 2000 record batches
-    repeat{
 
-      # Pick up here on 2025-03-25
-      # while(try <= max_tries){
-      #   try(
-          response <- fetch_data(where_clause, result_offset, max_records)
-      #   )
-      # }
+    # Repeat the request in 2000 record batches
+    # Sometimes the API doesn't like doing 2000 records in one and will throw a
+    # 504 (timeout). So we keep retrying, each time halving the requested payload.
+    rep <- 1
+    max_tries <- 10
+
+    # Repeat across 2000 records a time, reducing the payload where timeouts occur.
+    repeat{
+      cat(paste0("\nStarting page ", rep))
+      attempt <- 1
+
+      # While loop repeats request with payload halved each time until it succeeds
+      # or reaches max_tries
+      while(attempt <= max_tries){
+        cat(paste0("\nAttempt ", attempt))
+        cat(paste0("\nTrying with max records = ", max_records))
+        response <- try(
+          fetch_data(where_clause, result_offset, max_records)
+        )
+
+        if(!inherits(response, "try-error")){
+          cat(paste0("\nSuccess with max records = ", max_records))
+          break
+        }
+
+        attempt <- attempt + 1
+        max_records <- max_records / 2 # try again by halving the payload
+        cat("\nRetrying...")
+      }
 
       geojson_data <- httr::content(response, as = "text")
       # Translate to sf object
@@ -219,9 +268,11 @@ get_msoa_geometries <- function(subset = NULL, result_offset = 0, max_records = 
       # Append results
       all_results <- append(all_results, list(sf_chunk))
       result_offset <- result_offset + max_records
+      max_records <- 2000 # reset max_records
+      rep <- rep + 1
     }
     t2 <- Sys.time()
-    time_elapsed <- t2 - t1
+    time_elapsed <- difftime(t2, t1, units = "secs")
     cat(paste0("\nRequest done in: ", time_elapsed, " seconds"))
     cat("\nNote time includes local data processing")
 
@@ -233,12 +284,21 @@ get_msoa_geometries <- function(subset = NULL, result_offset = 0, max_records = 
   else{
     # If a subset has been requested, run in chunks of 90. This is limit set by API
 
+    # First we need to get the relevant areas for the subset
+    subset_variable <- names(subset)[1]
+    # Use toupper because that is how it is on API
+    subset_values <- subset[[1]]
+
+    target_values <- area_lookup %>%
+      dplyr::filter(!!rlang::sym(subset_variable) %in% subset_values) %>%
+      dplyr::distinct(msoa21cd) %>%
+      dplyr::pull()
+
     # Initialise and specify parameters for the query
     all_results <- list()
     batch_size <- 90
 
-    target_variable <- toupper(names(subset)[1]) # Use toupper because that is how it is on API
-    target_values <- subset[[1]]
+    target_variable <- "MSOA21CD"
 
     chunks <- split(target_values, ceiling(seq_along(target_values) / batch_size))
 
@@ -266,7 +326,7 @@ get_msoa_geometries <- function(subset = NULL, result_offset = 0, max_records = 
     }
     t2 <- Sys.time()
     time_elapsed <- t2 - t1
-    cat(paste0("\nRequest done in: ", time_elapsed, " seconds"))
+    cat(paste0("\nRequest done in: ", round(time_elapsed,3), " seconds"))
 
     msoa_geometries <- dplyr::bind_rows(all_results) %>%
       # Tidy up
