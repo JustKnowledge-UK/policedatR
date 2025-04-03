@@ -454,6 +454,49 @@ get_lad_data <- function(subset = NULL,
 
 }
 
+#' Get stop and search data for Middle layer Super Output Areas
+#'
+#' Acquire stop and search data from police.uk API for Middle layer Super Output Areas.
+#'
+#' @param subset A named list defining the areas to which to subset. Names
+#' correspond to the variable on which to subset. Values correspond to the desired
+#' values of the variable. See `area_variables()` for areas that can be used to subset.
+#' @param num_months_backwards The number of months backwards from the start
+#' point for which to acquire data. Default is 12. Maximum is 36 (limit imposed by API).
+#' @param oldest_month Instead of specifying `num_months_backwards`, the user
+#' can specify the oldest month of interest (in combination with the oldest year
+#' of interest). Numeric value in format M (e.g., 8 for August).
+#' @param oldest_year Instead of specifying `num_months_backwards`, the user
+#' can specify the oldest year of interest (in combination with the oldest
+#' month of interest). Numeric value in format YYYY (e.g., 2019).
+#' @param most_recent_month The most recent month of interest. Numeric value in format M
+#' (e.g., 8 for August). By default the function will determine this based on
+#' the most recent API update.
+#' @param most_recent_year The most recent month of interest. Numeric value in format YYYY
+#' (e.g., 2021). By default the function will determine this based on the most
+#' recent API update.
+#' @param wait_time If there is a server error when submitting POST request,
+#' the function will wait `wait_time` seconds before retrying. Numeric value.
+#' Default is 5.
+#' @param max_tries Specify the maximum number of times to retry a failed
+#' POST request. Numeric value. Default is 10. Failures are usually due to
+#' timeouts, which are often resolved by retrying, but can also be because there
+#' is no data avaible for the area/date combination.
+#' @param include_no_stop_areas Whether to include areas for which there are no results.
+#' Default is TRUE (recommended as this will flag areas for which there are no stops and so
+#' provide most comprehensive picture).
+#'
+#' @returns A data frame where each row is a separate stop and search record.
+#' @export
+#'
+#' @examples
+#'
+#' # Get the most recent 12 months of data for all MSOAs.
+#' df <- get_msoa_data()
+#'
+#' # Get data for a subset of MSOAs, only the last 6 months
+#' df2 <- get_msoa_data(subset = list("lad22nm" = c('Haringey','Waltham Forest'), num_months_backwards = 6))
+
 get_msoa_data <- function(subset = NULL,
                          num_months_backwards = 12,
                          oldest_month = NULL,
@@ -462,8 +505,8 @@ get_msoa_data <- function(subset = NULL,
                          most_recent_year = NULL,
                          wait_time = 5,
                          max_tries = 5,
-                         include_no_stop_areas = TRUE,
-                         n_records = NULL # For testing
+                         include_no_stop_areas = TRUE
+                         # n_records = NULL # For testing
 ){
 
   ########################
