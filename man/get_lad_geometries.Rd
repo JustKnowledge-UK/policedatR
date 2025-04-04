@@ -7,12 +7,16 @@
 get_lad_geometries(subset = NULL)
 }
 \arguments{
-\item{subset}{A named list defining the areas to which to subset. Names
-correspond to the variable on which to subset. Values correspond to the desired
-values of the variable.}
+\item{subset}{A named list defining the areas for which to acquire geometries. Names
+correspond to the area variable on which to subset (run policedatR::area_variables() to see options for areas on which to subset).
+Values correspond to the desired values of the area variable. Values can be single
+strings or character vectors.
+
+If NULL, will acquire all LAD geometries and will take around 1 minute pre-caching.}
 }
 \value{
-A tibble of geometries where each row is local authority district
+An sf data frame where each row is a Local Authority District, with columns lad22cd, lad22nm,
+shape_area and geometry.
 }
 \description{
 Acquire geometry data from geoportal.gov.uk for Local Authority Districts as

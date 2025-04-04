@@ -8,11 +8,11 @@ get_msoa_geometries(subset = NULL)
 }
 \arguments{
 \item{subset}{A named list defining the areas for which to acquire geometries. Names
-correspond to the variable on which to subset (run policedatR::area_variables() to see options for areas on which to subset).
-Values correspond to the desired values of the variable. Values can be single
+correspond to the area variable on which to subset (run policedatR::area_variables() to see options for areas on which to subset).
+Values correspond to the desired values of the area variable. Values can be single
 strings or character vectors.
 
-If NULL, will acquire all MSOA geometries and will take around 5 minutes.}
+If NULL, will acquire all MSOA geometries and will take around 5 minutes pre-caching.}
 }
 \value{
 An sf data frame where each row is a MSOA, with columns msoa21cd, msoa21nm,
