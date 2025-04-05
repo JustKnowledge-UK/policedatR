@@ -19,7 +19,10 @@ list_areas <- function(area_type = "lad"){
   area_dict <- list("oa" = "oa21cd",
                     "lsoa" = "lsoa21nm",
                     "msoa" = "msoa21nm",
-                    "lad" = "lad22nm")
+                    "lad" = "lad22nm",
+                    "region" = "rgn22nm",
+                    "pfa" = "pfa22nm"
+                    )
 
   area_lookup %>%
     dplyr::distinct(.data[[area_dict[[area_type]]]]) %>%
