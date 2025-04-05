@@ -80,7 +80,7 @@ caching_check <- function(reset = FALSE){
           break
         }
         else{
-          print("Please type either 'y' or 'n' and press Enter.")
+          cat("Please type either 'y' or 'n' and press Enter.")
         }
       }
     }
@@ -101,3 +101,59 @@ caching_check <- function(reset = FALSE){
   Sys.setenv(caching = caching_status)
   Sys.setenv(cache_dir = cache_dir)
 }
+
+#' Flush the cache
+#'
+#' Delete all files in the cache directory. This may be helpful if `get_*` functions
+#' are returning unexpected results. This may happen, for example, where requests
+#' have failed but their responses were cached, and subsequent requests are
+#' reloading this failed request.
+#'
+#'
+#' Ideally this should never be necessary as failed requests should be handled by
+#' the `get_*` functions. However, there have been a few instances during development
+#' where it was necessary to flush the cache, so this function is provided as a
+#' 'just in case you need it' function.
+#'
+#' Cache directory is specified by `rappdirs::user_cache_dir(appname = NULL, appauthor = "policedatR")`
+#'
+#' @returns Nothing. Simply deletes all files found in cache directory.
+#' @export
+#'
+#' @examples
+#'
+#' flush_cache()
+flush_cache <- function(){
+
+  # Specify cache directory
+  cache_dir <- rappdirs::user_cache_dir(appname = NULL, appauthor = "policedatR")
+  # Check if it exists.
+  if(!dir.exists(cache_dir)){
+    cat("No cache detected so nothing to flush. Aborting.")
+    break
+  }
+  # If it exists, check if there are files to delete.
+  else if(dir.exists(cache_dir) & length(list.files(cache_dir)) == 0){
+    cat(paste0("Cache detected at ", cache_dir, ", but cache is empty. No need to flush."))
+  }
+  # If there are files to delete, check the user is sure they want to delete them.
+  else{
+      repeat{
+        cat(paste0("Cache detected at ", cache_dir, ". Are you sure you want to delete files in cache?\n"))
+        check <- readline("(y/n)")
+        if(check == "y"){
+          cat("Deleting files in cache...")
+          do.call(file.remove, list(list.files(cache_dir, full.names = TRUE)))
+          break
+        }
+        else if(check == "n"){
+          cat("Flush aborted.")
+          break
+        }
+        else{
+          cat("Please type either 'y' or 'n' and press Enter.\n")
+        }
+      }
+  }
+}
+
