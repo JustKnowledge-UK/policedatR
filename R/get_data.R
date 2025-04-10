@@ -61,7 +61,8 @@ get_region_data <- function(subset = NULL,
                          include_no_stop_areas = TRUE
                          #n_records = 3 # For testing
 ){
-
+  caching <- Sys.getenv("caching")
+  cache_dir <- Sys.getenv("cache_dir")
   ########################
   #### Error handling ####
   ########################
@@ -248,43 +249,16 @@ get_region_data <- function(subset = NULL,
         body <- list("poly" = coord_string,
                      "date" = date)
 
-        # search API for this coordinate set and date:
-        post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-
-        # if search quota reached, break (shouldn't be an issue but just in case)
-        if(post_request[["status_code"]] == 429){
-          print("Quota reached. Abandoning request.")
-          break
+        if(caching){
+          cd = cachem::cache_disk(cache_dir, evict = "lru")
+          # Memoise the function
+          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          post_request <- fetch_police_data_memoised(body = body)
         }
-        else{
-          # if the request didn't succeed, wait some time ('wait_time') and
-          # keep trying up until 'max_tries' attempts.
-          attempt <- 1
-          while(post_request[["status_code"]] != 200 && attempt <= max_tries){
-            print(paste0("Server error: ", post_request[["status_code"]], ". Trying again (", attempt,")"))
-            Sys.sleep(wait_time) # wait some time before trying again
-            try(
-              post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-            )
-            # if search quota reached, break (shouldn't be an issue but just in case)
-            if(post_request[["status_code"]] == 429){
-              print("Quota reached. Abandoning request.")
-              break
-            }
-            attempt <- attempt + 1
-          }
-
-          # once max_tries is met, give up retry, save info including status code
-          if(post_request[["status_code"]] != 200 && attempt > max_tries){
-            print(paste0("Max tries reached (", max_tries,"). Continuing."))
-            if(is.na(server_error_df[1,1])){ # if first occurrence, replaces NAs
-              server_error_df[1,] <- c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]])
-            }
-            else{ # rbind subsequent occurrences
-              server_error_df <- rbind(server_error_df, c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]]))
-            }
-          }
+        else {
+          post_request <- policedatR::fetch_police_data(body = body)
         }
+
 
         # get data from results of query
         df <- httr::content(post_request)
@@ -490,6 +464,8 @@ get_pfa_data <- function(subset = NULL,
                          include_no_stop_areas = TRUE
                          #n_records = 3 # For testing
 ){
+  caching <- Sys.getenv("caching")
+  cache_dir <- Sys.getenv("cache_dir")
 
   ########################
   #### Error handling ####
@@ -677,42 +653,14 @@ get_pfa_data <- function(subset = NULL,
         body <- list("poly" = coord_string,
                      "date" = date)
 
-        # search API for this coordinate set and date:
-        post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-
-        # if search quota reached, break (shouldn't be an issue but just in case)
-        if(post_request[["status_code"]] == 429){
-          print("Quota reached. Abandoning request.")
-          break
+        if(caching){
+          cd = cachem::cache_disk(cache_dir, evict = "lru")
+          # Memoise the function
+          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          post_request <- fetch_police_data_memoised(body = body)
         }
-        else{
-          # if the request didn't succeed, wait some time ('wait_time') and
-          # keep trying up until 'max_tries' attempts.
-          attempt <- 1
-          while(post_request[["status_code"]] != 200 && attempt <= max_tries){
-            print(paste0("Server error: ", post_request[["status_code"]], ". Trying again (", attempt,")"))
-            Sys.sleep(wait_time) # wait some time before trying again
-            try(
-              post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-            )
-            # if search quota reached, break (shouldn't be an issue but just in case)
-            if(post_request[["status_code"]] == 429){
-              print("Quota reached. Abandoning request.")
-              break
-            }
-            attempt <- attempt + 1
-          }
-
-          # once max_tries is met, give up retry, save info including status code
-          if(post_request[["status_code"]] != 200 && attempt > max_tries){
-            print(paste0("Max tries reached (", max_tries,"). Continuing."))
-            if(is.na(server_error_df[1,1])){ # if first occurrence, replaces NAs
-              server_error_df[1,] <- c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]])
-            }
-            else{ # rbind subsequent occurrences
-              server_error_df <- rbind(server_error_df, c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]]))
-            }
-          }
+        else {
+          post_request <- policedatR::fetch_police_data(body = body)
         }
 
         # get data from results of query
@@ -913,6 +861,8 @@ get_lad_data <- function(subset = NULL,
                          include_no_stop_areas = TRUE
                          #n_records = 3 # For testing
                          ){
+  caching <- Sys.getenv("caching")
+  cache_dir <- Sys.getenv("cache_dir")
 
   ########################
   #### Error handling ####
@@ -1077,7 +1027,9 @@ get_lad_data <- function(subset = NULL,
               geometries[[geometry_column_number]][[h]][[j]][[1]]
           } else {
             geometries[[geometry_column_number]][[h]][[j]]
-            } %>%
+            }
+
+        area_coords <- area_coords %>%
           tibble::as_tibble() %>% # .name_repair = ~c("long","lat")) # %>%
           dplyr::rename(
             lat = V2, # lat is e.g. 52.62
@@ -1098,42 +1050,14 @@ get_lad_data <- function(subset = NULL,
         body <- list("poly" = coord_string,
                      "date" = date)
 
-        # search API for this coordinate set and date:
-        post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-
-        # if search quota reached, break (shouldn't be an issue but just in case)
-        if(post_request[["status_code"]] == 429){
-          print("Quota reached. Abandoning request.")
-          break
+        if(caching){
+          cd = cachem::cache_disk(cache_dir, evict = "lru")
+          # Memoise the function
+          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          post_request <- fetch_police_data_memoised(body = body)
         }
-        else{
-          # if the request didn't succeed, wait some time ('wait_time') and
-          # keep trying up until 'max_tries' attempts.
-          attempt <- 1
-          while(post_request[["status_code"]] != 200 && attempt <= max_tries){
-            print(paste0("Server error: ", post_request[["status_code"]], ". Trying again (", attempt,")"))
-            Sys.sleep(wait_time) # wait some time before trying again
-            try(
-              post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-            )
-            # if search quota reached, break (shouldn't be an issue but just in case)
-            if(post_request[["status_code"]] == 429){
-              print("Quota reached. Abandoning request.")
-              break
-            }
-            attempt <- attempt + 1
-          }
-
-          # once max_tries is met, give up retry, save info including status code
-          if(post_request[["status_code"]] != 200 && attempt > max_tries){
-            print(paste0("Max tries reached (", max_tries,"). Continuing."))
-            if(is.na(server_error_df[1,1])){ # if first occurrence, replaces NAs
-              server_error_df[1,] <- c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]])
-            }
-            else{ # rbind subsequent occurrences
-              server_error_df <- rbind(server_error_df, c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]]))
-            }
-          }
+        else {
+          post_request <- policedatR::fetch_police_data(body = body)
         }
 
         # get data from results of query
@@ -1337,6 +1261,8 @@ get_msoa_data <- function(subset = NULL,
                          # n_records = NULL # For testing
 ){
 
+  caching <- Sys.getenv("caching")
+  cache_dir <- Sys.getenv("cache_dir")
   ########################
   #### Error handling ####
   ########################
@@ -1525,43 +1451,16 @@ get_msoa_data <- function(subset = NULL,
         body <- list("poly" = coord_string,
                      "date" = date)
 
-        # search API for this coordinate set and date:
-        post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-
-        # if search quota reached, break (shouldn't be an issue but just in case)
-        if(post_request[["status_code"]] == 429){
-          print("Quota reached. Abandoning request.")
-          break
+        if(caching){
+          cd = cachem::cache_disk(cache_dir, evict = "lru")
+          # Memoise the function
+          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          post_request <- fetch_police_data_memoised(body = body)
         }
-        else{
-          # if the request didn't succeed, wait some time ('wait_time') and
-          # keep trying up until 'max_tries' attempts.
-          attempt <- 1
-          while(post_request[["status_code"]] != 200 && attempt <= max_tries){
-            print(paste0("Server error: ", post_request[["status_code"]], ". Trying again (", attempt,")"))
-            Sys.sleep(wait_time) # wait some time before trying again
-            try(
-              post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-            )
-            # if search quota reached, break (shouldn't be an issue but just in case)
-            if(post_request[["status_code"]] == 429){
-              print("Quota reached. Abandoning request.")
-              break
-            }
-            attempt <- attempt + 1
-          }
-
-          # once max_tries is met, give up retry, save info including status code
-          if(post_request[["status_code"]] != 200 && attempt > max_tries){
-            print(paste0("Max tries reached (", max_tries,"). Continuing."))
-            if(is.na(server_error_df[1,1])){ # if first occurrence, replaces NAs
-              server_error_df[1,] <- c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]])
-            }
-            else{ # rbind subsequent occurrences
-              server_error_df <- rbind(server_error_df, c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]]))
-            }
-          }
+        else {
+          post_request <- policedatR::fetch_police_data(body = body)
         }
+
 
         # get data from results of query
         df <- httr::content(post_request)
@@ -1766,6 +1665,8 @@ get_lsoa_data <- function(subset = NULL,
                           # n_records = NULL # For testing
 ){
 
+  caching <- Sys.getenv("caching")
+  cache_dir <- Sys.getenv("cache_dir")
   ########################
   #### Error handling ####
   ########################
@@ -1954,43 +1855,16 @@ get_lsoa_data <- function(subset = NULL,
         body <- list("poly" = coord_string,
                      "date" = date)
 
-        # search API for this coordinate set and date:
-        post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-
-        # if search quota reached, break (shouldn't be an issue but just in case)
-        if(post_request[["status_code"]] == 429){
-          print("Quota reached. Abandoning request.")
-          break
+        if(caching){
+          cd = cachem::cache_disk(cache_dir, evict = "lru")
+          # Memoise the function
+          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          post_request <- fetch_police_data_memoised(body = body)
         }
-        else{
-          # if the request didn't succeed, wait some time ('wait_time') and
-          # keep trying up until 'max_tries' attempts.
-          attempt <- 1
-          while(post_request[["status_code"]] != 200 && attempt <= max_tries){
-            print(paste0("Server error: ", post_request[["status_code"]], ". Trying again (", attempt,")"))
-            Sys.sleep(wait_time) # wait some time before trying again
-            try(
-              post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-            )
-            # if search quota reached, break (shouldn't be an issue but just in case)
-            if(post_request[["status_code"]] == 429){
-              print("Quota reached. Abandoning request.")
-              break
-            }
-            attempt <- attempt + 1
-          }
-
-          # once max_tries is met, give up retry, save info including status code
-          if(post_request[["status_code"]] != 200 && attempt > max_tries){
-            print(paste0("Max tries reached (", max_tries,"). Continuing."))
-            if(is.na(server_error_df[1,1])){ # if first occurrence, replaces NAs
-              server_error_df[1,] <- c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]])
-            }
-            else{ # rbind subsequent occurrences
-              server_error_df <- rbind(server_error_df, c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]]))
-            }
-          }
+        else {
+          post_request <- policedatR::fetch_police_data(body = body)
         }
+
 
         # get data from results of query
         df <- httr::content(post_request)
@@ -2192,6 +2066,8 @@ get_oa_data <- function(subset = NULL,
                           # n_records = NULL # For testing
 ){
 
+  caching <- Sys.getenv("caching")
+  cache_dir <- Sys.getenv("cache_dir")
   ########################
   #### Error handling ####
   ########################
@@ -2380,43 +2256,16 @@ get_oa_data <- function(subset = NULL,
         body <- list("poly" = coord_string,
                      "date" = date)
 
-        # search API for this coordinate set and date:
-        post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-
-        # if search quota reached, break (shouldn't be an issue but just in case)
-        if(post_request[["status_code"]] == 429){
-          print("Quota reached. Abandoning request.")
-          break
+        if(caching){
+          cd = cachem::cache_disk(cache_dir, evict = "lru")
+          # Memoise the function
+          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          post_request <- fetch_police_data_memoised(body = body)
         }
-        else{
-          # if the request didn't succeed, wait some time ('wait_time') and
-          # keep trying up until 'max_tries' attempts.
-          attempt <- 1
-          while(post_request[["status_code"]] != 200 && attempt <= max_tries){
-            print(paste0("Server error: ", post_request[["status_code"]], ". Trying again (", attempt,")"))
-            Sys.sleep(wait_time) # wait some time before trying again
-            try(
-              post_request <- httr::POST("https://data.police.uk/api/stops-street?", body = body)
-            )
-            # if search quota reached, break (shouldn't be an issue but just in case)
-            if(post_request[["status_code"]] == 429){
-              print("Quota reached. Abandoning request.")
-              break
-            }
-            attempt <- attempt + 1
-          }
-
-          # once max_tries is met, give up retry, save info including status code
-          if(post_request[["status_code"]] != 200 && attempt > max_tries){
-            print(paste0("Max tries reached (", max_tries,"). Continuing."))
-            if(is.na(server_error_df[1,1])){ # if first occurrence, replaces NAs
-              server_error_df[1,] <- c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]])
-            }
-            else{ # rbind subsequent occurrences
-              server_error_df <- rbind(server_error_df, c(h, la_name, county, region, country, force, date, i, j, post_request[["status_code"]]))
-            }
-          }
+        else {
+          post_request <- policedatR::fetch_police_data(body = body)
         }
+
 
         # get data from results of query
         df <- httr::content(post_request)
