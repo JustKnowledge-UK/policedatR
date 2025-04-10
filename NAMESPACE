@@ -3,6 +3,7 @@
 export("%>%")
 export(area_variables)
 export(caching_check)
+export(fetch_police_data)
 export(flush_cache)
 export(get_lad_data)
 export(get_lad_geometries)
