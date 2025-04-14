@@ -46,7 +46,7 @@ caching_check <- function(reset = FALSE){
     if(!dir.exists(cache_dir)){
       # repeat check until either y or n has been pressed
       repeat{
-        cat("We recommend caching the data acquired from geoportal.gov.uk\nso that repeat queries can run faster.\nDo you want to create a local cache to save queries?")
+        cat("We recommend caching the data acquired from APIs\nso that repeat queries can run faster.\nDo you want to create a local cache to save queries?")
         check <- readline("(y/n)")
         if(check == "y"){
           dir.create(cache_dir, recursive = TRUE)
