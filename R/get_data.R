@@ -61,6 +61,8 @@ get_region_data <- function(subset = NULL,
                          include_no_stop_areas = TRUE
                          #n_records = 3 # For testing
 ){
+
+  policedatR::caching_check()
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
   ########################
@@ -464,6 +466,8 @@ get_pfa_data <- function(subset = NULL,
                          include_no_stop_areas = TRUE
                          #n_records = 3 # For testing
 ){
+
+  policedatR::caching_check()
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
@@ -861,6 +865,8 @@ get_lad_data <- function(subset = NULL,
                          include_no_stop_areas = TRUE
                          #n_records = 3 # For testing
                          ){
+
+  policedatR::caching_check()
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
@@ -1261,6 +1267,7 @@ get_msoa_data <- function(subset = NULL,
                          # n_records = NULL # For testing
 ){
 
+  policedatR::caching_check()
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
   ########################
@@ -1665,6 +1672,8 @@ get_lsoa_data <- function(subset = NULL,
                           # n_records = NULL # For testing
 ){
 
+
+  policedatR::caching_check()
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
   ########################
@@ -2066,6 +2075,7 @@ get_oa_data <- function(subset = NULL,
                           # n_records = NULL # For testing
 ){
 
+  policedatR::caching_check()
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
   ########################
