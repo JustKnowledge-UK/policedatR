@@ -36,4 +36,5 @@ library(policedatR)
 ## Notes on licencing
 
 Data acquired using policedatR is published by data.police.uk under [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)
+
 policedatR makes use of lookups and boundary data from the Office for National Statistics [Open Geography Portal](https://geoportal.statistics.gov.uk/). These data are also licenced [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)
