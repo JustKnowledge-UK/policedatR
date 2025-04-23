@@ -564,7 +564,8 @@ get_lad_geometries <- function(subset = NULL){
 #' }
 #'
 #' # Get MSOAs just in Haringey and Waltham Forest
-#' haringey_waltham_msoas <- get_msoa_geometries(subset = list("lad22nm" = c("Haringey", "Waltham Forest")))
+#' hw_msoas <- get_msoa_geometries(
+#'                 subset = list("lad22nm" = c("Haringey", "Waltham Forest")))
 #'
 #'
 get_msoa_geometries <- function(subset = NULL){
@@ -786,7 +787,9 @@ get_msoa_geometries <- function(subset = NULL){
 #' london_lsoas <- get_lsoa_geometries(subset = list("rgn22nm" = "London"))
 #' }
 #' # Get LSOAs just in Haringey and Waltham Forest
-#' haringey_waltham_lsoas <- get_lsoa_geometries(subset = list("lad22nm" = c("Haringey", "Waltham Forest")))
+#' hw_lsoas <- get_lsoa_geometries(
+#'                 subset = list("lad22nm" = c("Haringey", "Waltham Forest"))
+#'                 )
 #'
 #'
 get_lsoa_geometries <- function(subset = NULL){
