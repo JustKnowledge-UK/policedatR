@@ -330,20 +330,24 @@ get_region_data <- function(subset = NULL,
     # print(nrow(area_output))
     # print(area_output)
 
-    # this is an optional bit to explcitly flag areas where data are missing. i did this originally to double check that the sciprt was definitely doing a post request for every oa. but it seems good practice to inclue this as least as an option, so we know for which areas there were no stops
+    # If the area output is empty, no stops were found in the area.
+    # where this is the case, report the area data, with NAs for the rest
+    # and explicitly tag these areas as having no stops with stops_found = FALSE
     if(include_no_stop_areas==TRUE){
-      # if the area output is empty, no stops were found in the area.
-      # where this is the case, report the area data, with NAs for the rest
       if(nrow(area_output) == 0){
-        # cat("nrow is 0")
-        area_output <- areas_df # add in all the area data by binding the columns for this area
+        area_output <- areas_df %>% # add in all the area data by binding the columns for this area
+          dplyr::mutate(
+            stops_found = FALSE
+          )
       } else{
-        # cat("nrow not 0")
         # if stops were found for this area, add in the areas to the front
-        area_output <- dplyr::bind_cols(areas_df, area_output)
+        # and tag the rows with stops_found = TRUE
+        area_output <- dplyr::bind_cols(areas_df, area_output) %>%
+          dplyr::mutate(
+            stops_found = TRUE
+          )
       }
     }
-
 
     # if(nrow(area_output==0)){
     #   area_output <- bind_rows(area_output, as.data.frame(matrix(NA, ncol = ncol(area_output), nrow = 1)))
@@ -392,12 +396,12 @@ get_region_data <- function(subset = NULL,
   #   dplyr::select(c(pfa22cd:rgn22nm)) %>%
   #   dplyr::distinct()
 
-  # Then join
-  overall_output <- overall_output %>%
-    # dplyr::left_join(areas_above, by = c("pfa22cd", "pfa22nm")) %>%
-    # # Locate the area variables at the left of the dataframe
-    # dplyr::relocate(c(rgn22cd:rgn22nm), .after = pfa22nm) %>%
-    dplyr::relocate(datetime, .after = rgn22nm)
+  # If datetime exists in overall_output (and therefore stops were found),
+  # relocate it. Otherwise don't try to relocate datetime (as it isn't there!)
+  if("datetime" %in% colnames(overall_output)){
+    overall_output <- overall_output %>%
+      dplyr::relocate(datetime, .after = rgn22nm)
+  }
 
 
   t2 <- Sys.time()
@@ -739,17 +743,22 @@ get_pfa_data <- function(subset = NULL,
     # print(nrow(area_output))
     # print(area_output)
 
-    # this is an optional bit to explcitly flag areas where data are missing. i did this originally to double check that the sciprt was definitely doing a post request for every oa. but it seems good practice to inclue this as least as an option, so we know for which areas there were no stops
+    # If the area output is empty, no stops were found in the area.
+    # where this is the case, report the area data, with NAs for the rest
+    # and explicitly tag these areas as having no stops with stops_found = FALSE
     if(include_no_stop_areas==TRUE){
-      # if the area output is empty, no stops were found in the area.
-      # where this is the case, report the area data, with NAs for the rest
       if(nrow(area_output) == 0){
-        # cat("nrow is 0")
-        area_output <- areas_df # add in all the area data by binding the columns for this area
+        area_output <- areas_df %>% # add in all the area data by binding the columns for this area
+          dplyr::mutate(
+            stops_found = FALSE
+          )
       } else{
-        # cat("nrow not 0")
         # if stops were found for this area, add in the areas to the front
-        area_output <- dplyr::bind_cols(areas_df, area_output)
+        # and tag the rows with stops_found = TRUE
+        area_output <- dplyr::bind_cols(areas_df, area_output) %>%
+          dplyr::mutate(
+            stops_found = TRUE
+          )
       }
     }
 
@@ -806,9 +815,14 @@ get_pfa_data <- function(subset = NULL,
   overall_output <- overall_output %>%
     dplyr::left_join(areas_above, by = c("pfa22cd", "pfa22nm")) %>%
     # Locate the area variables at the left of the dataframe
-    dplyr::relocate(c(rgn22cd:rgn22nm), .after = pfa22nm) %>%
-    dplyr::relocate(datetime, .after = rgn22nm)
+    dplyr::relocate(c(rgn22cd:rgn22nm), .after = pfa22nm)
 
+  # If datetime exists in overall_output (and therefore stops were found),
+  # relocate it. Otherwise don't try to relocate datetime (as it isn't there!)
+  if("datetime" %in% colnames(overall_output)){
+    overall_output <- overall_output %>%
+      dplyr::relocate(datetime, .after = rgn22nm)
+  }
 
   t2 <- Sys.time()
   time_elapsed <- difftime(t2, t1, units = "secs")
@@ -1141,20 +1155,24 @@ get_lad_data <- function(subset = NULL,
     # print(nrow(area_output))
     # print(area_output)
 
-    # this is an optional bit to explcitly flag areas where data are missing. i did this originally to double check that the sciprt was definitely doing a post request for every oa. but it seems good practice to inclue this as least as an option, so we know for which areas there were no stops
+    # If the area output is empty, no stops were found in the area.
+    # where this is the case, report the area data, with NAs for the rest
+    # and explicitly tag these areas as having no stops with stops_found = FALSE
     if(include_no_stop_areas==TRUE){
-      # if the area output is empty, no stops were found in the area.
-      # where this is the case, report the area data, with NAs for the rest
       if(nrow(area_output) == 0){
-        # cat("nrow is 0")
-        area_output <- areas_df # add in all the area data by binding the columns for this area
+        area_output <- areas_df %>% # add in all the area data by binding the columns for this area
+          dplyr::mutate(
+            stops_found = FALSE
+          )
       } else{
-        # cat("nrow not 0")
         # if stops were found for this area, add in the areas to the front
-        area_output <- dplyr::bind_cols(areas_df, area_output)
+        # and tag the rows with stops_found = TRUE
+        area_output <- dplyr::bind_cols(areas_df, area_output) %>%
+          dplyr::mutate(
+            stops_found = TRUE
+          )
       }
     }
-
 
     # if(nrow(area_output==0)){
     #   area_output <- bind_rows(area_output, as.data.frame(matrix(NA, ncol = ncol(area_output), nrow = 1)))
@@ -1208,8 +1226,14 @@ get_lad_data <- function(subset = NULL,
   overall_output <- overall_output %>%
     dplyr::left_join(areas_above, by = c("lad22cd", "lad22nm")) %>%
     # Locate the area variables at the left of the dataframe
-    dplyr::relocate(c(pfa22cd:rgn22nm), .after = lad22nm) %>%
-    dplyr::relocate(datetime, .after = rgn22nm)
+    dplyr::relocate(c(pfa22cd:rgn22nm), .after = lad22nm)
+
+  # If datetime exists in overall_output (and therefore stops were found),
+  # relocate it. Otherwise don't try to relocate datetime (as it isn't there!)
+  if("datetime" %in% colnames(overall_output)){
+    overall_output <- overall_output %>%
+      dplyr::relocate(datetime, .after = rgn22nm)
+  }
 
 
   t2 <- Sys.time()
@@ -1548,17 +1572,22 @@ get_msoa_data <- function(subset = NULL,
     # print(nrow(area_output))
     # print(area_output)
 
-    # this is an optional bit to explcitly flag areas where data are missing. i did this originally to double check that the sciprt was definitely doing a post request for every oa. but it seems good practice to inclue this as least as an option, so we know for which areas there were no stops
+    # If the area output is empty, no stops were found in the area.
+    # where this is the case, report the area data, with NAs for the rest
+    # and explicitly tag these areas as having no stops with stops_found = FALSE
     if(include_no_stop_areas==TRUE){
-      # if the area output is empty, no stops were found in the area.
-      # where this is the case, report the area data, with NAs for the rest
       if(nrow(area_output) == 0){
-        # cat("nrow is 0")
-        area_output <- areas_df # add in all the area data by binding the columns for this area
+        area_output <- areas_df %>% # add in all the area data by binding the columns for this area
+          dplyr::mutate(
+            stops_found = FALSE
+          )
       } else{
-        # cat("nrow not 0")
         # if stops were found for this area, add in the areas to the front
-        area_output <- dplyr::bind_cols(areas_df, area_output)
+        # and tag the rows with stops_found = TRUE
+        area_output <- dplyr::bind_cols(areas_df, area_output) %>%
+          dplyr::mutate(
+            stops_found = TRUE
+          )
       }
     }
 
@@ -1616,9 +1645,14 @@ get_msoa_data <- function(subset = NULL,
   overall_output <- overall_output %>%
     dplyr::left_join(areas_above, by = c("msoa21cd", "msoa21nm")) %>%
     # Locate the area variables at the left of the dataframe
-    dplyr::relocate(c(lad22cd:rgn22nm), .after = msoa21nm) %>%
-    dplyr::relocate(datetime, .after = rgn22nm)
+    dplyr::relocate(c(lad22cd:rgn22nm), .after = msoa21nm)
 
+  # If datetime exists in overall_output (and therefore stops were found),
+  # relocate it. Otherwise don't try to relocate datetime (as it isn't there!)
+  if("datetime" %in% colnames(overall_output)){
+    overall_output <- overall_output %>%
+      dplyr::relocate(datetime, .after = rgn22nm)
+  }
 
   t2 <- Sys.time()
   time_elapsed <- difftime(t2, t1, units = "secs")
@@ -1960,17 +1994,22 @@ get_lsoa_data <- function(subset = NULL,
     # print(nrow(area_output))
     # print(area_output)
 
-    # this is an optional bit to explcitly flag areas where data are missing. i did this originally to double check that the sciprt was definitely doing a post request for every oa. but it seems good practice to inclue this as least as an option, so we know for which areas there were no stops
+    # If the area output is empty, no stops were found in the area.
+    # where this is the case, report the area data, with NAs for the rest
+    # and explicitly tag these areas as having no stops with stops_found = FALSE
     if(include_no_stop_areas==TRUE){
-      # if the area output is empty, no stops were found in the area.
-      # where this is the case, report the area data, with NAs for the rest
       if(nrow(area_output) == 0){
-        # cat("nrow is 0")
-        area_output <- areas_df # add in all the area data by binding the columns for this area
+        area_output <- areas_df %>% # add in all the area data by binding the columns for this area
+          dplyr::mutate(
+            stops_found = FALSE
+          )
       } else{
-        # cat("nrow not 0")
         # if stops were found for this area, add in the areas to the front
-        area_output <- dplyr::bind_cols(areas_df, area_output)
+        # and tag the rows with stops_found = TRUE
+        area_output <- dplyr::bind_cols(areas_df, area_output) %>%
+          dplyr::mutate(
+            stops_found = TRUE
+          )
       }
     }
 
@@ -2028,8 +2067,15 @@ get_lsoa_data <- function(subset = NULL,
   overall_output <- overall_output %>%
     dplyr::left_join(areas_above, by = c("lsoa21cd", "lsoa21nm")) %>%
     # Locate the area variables at the left of the dataframe
-    dplyr::relocate(c(msoa21cd:rgn22nm), .after = lsoa21nm) %>%
-    dplyr::relocate(datetime, .after = rgn22nm)
+    dplyr::relocate(c(msoa21cd:rgn22nm), .after = lsoa21nm)
+
+  # If datetime exists in overall_output (and therefore stops were found),
+  # relocate it. Otherwise don't try to relocate datetime (as it isn't there!)
+  if("datetime" %in% colnames(overall_output)){
+    overall_output <- overall_output %>%
+      dplyr::relocate(datetime, .after = rgn22nm)
+  }
+
 
 
   t2 <- Sys.time()
@@ -2087,6 +2133,7 @@ get_lsoa_data <- function(subset = NULL,
 #' # Get data for a subset of OAs, only the last 6 months
 #' df2 <- get_oa_data(subset = list("lad22nm" = c('Haringey','Waltham Forest'), num_months_backwards = 6))
 #' }
+#'
 #'
 get_oa_data <- function(subset = NULL,
                           num_months_backwards = 12,
@@ -2365,17 +2412,22 @@ get_oa_data <- function(subset = NULL,
     # print(nrow(area_output))
     # print(area_output)
 
-    # this is an optional bit to explcitly flag areas where data are missing. i did this originally to double check that the sciprt was definitely doing a post request for every oa. but it seems good practice to inclue this as least as an option, so we know for which areas there were no stops
+    # If the area output is empty, no stops were found in the area.
+    # where this is the case, report the area data, with NAs for the rest
+    # and explicitly tag these areas as having no stops with stops_found = FALSE
     if(include_no_stop_areas==TRUE){
-      # if the area output is empty, no stops were found in the area.
-      # where this is the case, report the area data, with NAs for the rest
       if(nrow(area_output) == 0){
-        # cat("nrow is 0")
-        area_output <- areas_df # add in all the area data by binding the columns for this area
+        area_output <- areas_df %>% # add in all the area data by binding the columns for this area
+          dplyr::mutate(
+            stops_found = FALSE
+          )
       } else{
-        # cat("nrow not 0")
         # if stops were found for this area, add in the areas to the front
-        area_output <- dplyr::bind_cols(areas_df, area_output)
+        # and tag the rows with stops_found = TRUE
+        area_output <- dplyr::bind_cols(areas_df, area_output) %>%
+          dplyr::mutate(
+            stops_found = TRUE
+          )
       }
     }
 
@@ -2433,9 +2485,14 @@ get_oa_data <- function(subset = NULL,
   overall_output <- overall_output %>%
     dplyr::left_join(areas_above, by = c("oa21cd")) %>%
     # Locate the area variables at the left of the dataframe
-    dplyr::relocate(c(lsoa21cd:rgn22nm), .after = oa21cd) %>%
-    dplyr::relocate(datetime, .after = rgn22nm)
+    dplyr::relocate(c(lsoa21cd:rgn22nm), .after = oa21cd)
 
+  # If datetime exists in overall_output (and therefore stops were found),
+  # relocate it. Otherwise don't try to relocate datetime (as it isn't there!)
+  if("datetime" %in% colnames(overall_output)){
+    overall_output <- overall_output %>%
+      dplyr::relocate(datetime, .after = rgn22nm)
+  }
 
   t2 <- Sys.time()
   time_elapsed <- difftime(t2, t1, units = "secs")
