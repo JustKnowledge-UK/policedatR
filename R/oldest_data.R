@@ -4,6 +4,10 @@
 #' @return A string describing date in yyyy-mm format
 #' @export
 #'
+#' @@examples
+#'
+#' oldest_data()
+#'
 #'
 oldest_data <- function(){
   oldest <- httr::GET("https://data.police.uk/api/crimes-street-dates")
