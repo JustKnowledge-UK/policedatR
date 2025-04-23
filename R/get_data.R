@@ -134,8 +134,8 @@ get_region_data <- function(subset = NULL,
 
   # Initialise variables
   overall_output <- data.frame()
-  no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
-  server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
+  # no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
+  # server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
 
   # get most recent update if to data not specified
   if(is.null(most_recent_month) || is.null(most_recent_year)){
@@ -548,8 +548,8 @@ get_pfa_data <- function(subset = NULL,
 
   # Initialise variables
   overall_output <- data.frame()
-  no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
-  server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
+  # no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
+  # server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
 
   # get most recent update if to data not specified
   if(is.null(most_recent_month) || is.null(most_recent_year)){
@@ -877,7 +877,9 @@ get_pfa_data <- function(subset = NULL,
 #' df <- get_lad_data()
 #' }
 #' # Get data for a subset of LADs, only the last 6 months
-#' df2 <- get_lad_data(subset = list("lad22nm" = c('Haringey','Waltham Forest')), num_months_backwards = 1)
+#' df2 <- get_lad_data(subset = list(
+#'                       "lad22nm" = c('Haringey','Waltham Forest')),
+#'                       num_months_backwards = 1)
 #'
 #'
 get_lad_data <- function(subset = NULL,
@@ -960,8 +962,8 @@ get_lad_data <- function(subset = NULL,
 
   # Initialise variables
   overall_output <- data.frame()
-  no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
-  server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
+  # no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
+  # server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
 
   # get most recent update if to data not specified
   if(is.null(most_recent_month) || is.null(most_recent_year)){
@@ -1374,8 +1376,8 @@ get_msoa_data <- function(subset = NULL,
 
   # Initialise variables
   overall_output <- data.frame()
-  no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
-  server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
+  # no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
+  # server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
 
   # get most recent update if to data not specified
   if(is.null(most_recent_month) || is.null(most_recent_year)){
@@ -1796,8 +1798,8 @@ get_lsoa_data <- function(subset = NULL,
 
   # Initialise variables
   overall_output <- data.frame()
-  no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
-  server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
+  # no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
+  # server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
 
   # get most recent update if to data not specified
   if(is.null(most_recent_month) || is.null(most_recent_year)){
@@ -2131,7 +2133,9 @@ get_lsoa_data <- function(subset = NULL,
 #' df <- get_oa_data()
 #'
 #' # Get data for a subset of OAs, only the last 6 months
-#' df2 <- get_oa_data(subset = list("lad22nm" = c('Haringey','Waltham Forest'), num_months_backwards = 6))
+#' df2 <- get_oa_data(subset = list(
+#'                       "lad22nm" = c('Haringey','Waltham Forest')),
+#'                       num_months_backwards = 6)
 #' }
 #'
 #'
@@ -2214,8 +2218,8 @@ get_oa_data <- function(subset = NULL,
 
   # Initialise variables
   overall_output <- data.frame()
-  no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
-  server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
+  # no_entries_df <- data.frame(setNames(rep(list(NA), 6), c("Index", "Name","County","Region","Country","Force")))
+  # server_error_df <- data.frame(setNames(rep(list(NA), 10), c("Index","Name","County","Region","Country","Force","Date", "Date_Index", "Coordinate_Set_Index", "Status_Code")))
 
   # get most recent update if to data not specified
   if(is.null(most_recent_month) || is.null(most_recent_year)){
