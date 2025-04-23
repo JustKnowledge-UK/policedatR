@@ -40,15 +40,20 @@
 #'
 #' @examples
 #'
+#'\dontrun{
 #' # Get the most recent 12 months of data for all Regions.
+#' # Don't run as will take a while.
 #' df <- get_region_data()
+#' }
 #'
-#' # Get data for a subset of Regions, only the last 6 months.
-#' df2 <- get_region_data(subset = list("rgn22nm" = "London"), num_months_backwards = 6)
+#' # Get data for a subset of Regions, only the most recent month
+#' df2 <- get_region_data(subset = list("rgn22nm" = "London"), num_months_backwards = 1)
 #'
-#' Get data for the Region to which Haringey belongs (i.e. London). This
-#' will give identical result to example 2 above.
-#' df3 <- get_region_data(subset = list("lad22nm" = c("Haringey")), num_months_backwards = 6)
+#'
+#' # Get data for the Region to which Haringey belongs (i.e. London). This
+#' # will give identical result to example 2 above.
+#' df3 <- get_region_data(subset = list("lad22nm" = c("Haringey")), num_months_backwards = 1)
+#'
 #'
 get_region_data <- function(subset = NULL,
                          num_months_backwards = 12,
@@ -445,15 +450,19 @@ get_region_data <- function(subset = NULL,
 #'
 #' @examples
 #'
+#' \dontrun{
 #' # Get the most recent 12 months of data for all PFAs.
+#' # Don't run as will take a while
 #' df <- get_pfa_data()
+#' }
 #'
-#' # Get data for a subset of PFAs, only the last 6 months.
-#' df2 <- get_pfa_data(subset = list("pfa22nm" = "Metropolitan Police"), num_months_backwards = 6)
+#' # Get data for a subset of PFAs, only the most recent month.
+#' df2 <- get_pfa_data(subset = list("pfa22nm" = "Metropolitan Police"), num_months_backwards = 1)
 #'
-#' Get data for the PFA to which Haringey belongs (i.e. Metropolitan Police). This
-#' will give identical result to example 2 above.
-#' df3 <- get_pfa_data(subset = list("lad22nm" = c("Haringey")), num_months_backwards = 6)
+#' # Get data for the PFA to which Haringey belongs (i.e. Metropolitan Police). This
+#' # will give identical result to example 2 above.
+#' df3 <- get_pfa_data(subset = list("lad22nm" = c("Haringey")), num_months_backwards = 1)
+#'
 #'
 get_pfa_data <- function(subset = NULL,
                          num_months_backwards = 12,
@@ -848,11 +857,14 @@ get_pfa_data <- function(subset = NULL,
 #'
 #' @examples
 #'
+#' \dontrun{
 #' # Get the most recent 12 months of data for all LADs.
+#' # Don't run as will take a while.
 #' df <- get_lad_data()
-#'
+#' }
 #' # Get data for a subset of LADs, only the last 6 months
-#' df2 <- get_lad_data(subset = list("lad22nm" = c('Haringey','Waltham Forest'), num_months_backwards = 6))
+#' df2 <- get_lad_data(subset = list("lad22nm" = c('Haringey','Waltham Forest')), num_months_backwards = 1)
+#'
 #'
 get_lad_data <- function(subset = NULL,
                          num_months_backwards = 12,
@@ -1248,12 +1260,16 @@ get_lad_data <- function(subset = NULL,
 #'
 #' @examples
 #'
+#' \dontrun{
 #' # Get the most recent 12 months of data for all MSOAs.
+#' Don't run as will take a long time.
 #' df <- get_msoa_data()
 #'
 #' # Get data for a subset of MSOAs, only the last 6 months
-#' df2 <- get_msoa_data(subset = list("lad22nm" = c('Haringey','Waltham Forest'), num_months_backwards = 6))
-
+#' # Don't run as will take ~17 seconds.
+#' df2 <- get_msoa_data(subset = list("lad22nm" = 'Haringey'), num_months_backwards = 1)
+#' }
+#'
 
 get_msoa_data <- function(subset = NULL,
                          num_months_backwards = 12,
@@ -1654,11 +1670,17 @@ get_msoa_data <- function(subset = NULL,
 #'
 #' @examples
 #'
+#' \dontrun{
 #' # Get the most recent 12 months of data for all LSOAs. This will take a long time!
+#' # Don't run as will take a long time
 #' df <- get_lsoa_data()
 #'
 #' # Get data for a subset of MSOAs, only the last 6 months
-#' df2 <- get_lsoa_data(subset = list("lad22nm" = c('Haringey','Waltham Forest'), num_months_backwards = 6))
+#' # Don't run as will take ~52 seconds.
+#' df2 <- get_lsoa_data(subset = list("lad22nm" = 'Haringey'), num_months_backwards = 1)
+#' }
+#'
+#'
 #'
 get_lsoa_data <- function(subset = NULL,
                           num_months_backwards = 12,
@@ -2057,11 +2079,14 @@ get_lsoa_data <- function(subset = NULL,
 #'
 #' @examples
 #'
+#' \dontrun{
 #' # Get the most recent 12 months of data for all OAs. This will take a long time!
+#' # Don't run as will take a long time
 #' df <- get_oa_data()
 #'
-#' # Get data for a subset of MSOAs, only the last 6 months
+#' # Get data for a subset of OAs, only the last 6 months
 #' df2 <- get_oa_data(subset = list("lad22nm" = c('Haringey','Waltham Forest'), num_months_backwards = 6))
+#' }
 #'
 get_oa_data <- function(subset = NULL,
                           num_months_backwards = 12,
