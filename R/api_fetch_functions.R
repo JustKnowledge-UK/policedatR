@@ -32,8 +32,8 @@ fetch_police_data <- function(body,
 
   # if search quota reached, break (shouldn't be an issue but just in case)
   if(response[["status_code"]] == 429){
-    print("Quota reached. Abandoning request.")
-    break
+    stop("Quota reached. Abandoning request.")
+
   }
   else{
     # if the request didn't succeed, wait some time ('wait_time') and
@@ -55,8 +55,8 @@ fetch_police_data <- function(body,
 
     # once max_tries is met, give up retry, save info including status code
     if(response[["status_code"]] != 200 && attempt > max_tries){
-      print(paste0("Max tries reached (", max_tries,")."))
-      break
+      stop(paste0("Max tries reached (", max_tries,")."))
+
     }
   }
   return(response)
