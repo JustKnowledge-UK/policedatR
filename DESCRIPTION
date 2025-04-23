@@ -18,7 +18,9 @@ Imports:
     magrittr,
     memoise,
     rappdirs,
+    rlang,
     sf,
+    stringr,
     tibble
 Depends: 
     R (>= 3.5)
