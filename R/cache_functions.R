@@ -33,7 +33,10 @@
 #'
 #' @examples
 #'
+#' \dontrun{
+#' # This is interactive so don't run
 #' caching_check()
+#' }
 #'
 caching_check <- function(reset = FALSE){
   if(reset){
@@ -122,15 +125,18 @@ caching_check <- function(reset = FALSE){
 #'
 #' @examples
 #'
+#' \dontrun{
+#' # This is interactive so don't run
 #' flush_cache()
+#' }
 flush_cache <- function(){
 
   # Specify cache directory
   cache_dir <- rappdirs::user_cache_dir(appname = NULL, appauthor = "policedatR")
   # Check if it exists.
   if(!dir.exists(cache_dir)){
-    cat("No cache detected so nothing to flush. Aborting.")
-    break
+    stop("No cache detected so nothing to flush. Aborting.")
+
   }
   # If it exists, check if there are files to delete.
   else if(dir.exists(cache_dir) & length(list.files(cache_dir)) == 0){
