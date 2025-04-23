@@ -25,7 +25,7 @@ list_areas <- function(area_type = "lad"){
                     )
 
   area_lookup %>%
-    dplyr::distinct(.data[[area_dict[[area_type]]]]) %>%
+    dplyr::distinct(!!rlang::sym(area_dict[[area_type]])) %>%
     dplyr::pull()
 }
 
