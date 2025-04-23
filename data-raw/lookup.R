@@ -133,8 +133,8 @@ lad_region <- tibble::as_tibble(list_data$features) %>%
 #############################
 
 area_lookup <- oa_lsoa_msoa_lad %>%
-  left_join(lad_pfa, by = c("lad22cd", "lad22nm")) %>%
-  left_join(lad_region, by = c("lad22cd", "lad22nm")) %>%
+  left_join(lad_pfa %>% dplyr::select(-lad22nm), by = "lad22cd") %>% # drop lad22nm as it differs slightly in pfa lookup (e.g. 'city of')
+  left_join(lad_region %>% dplyr::select(-lad22nm), by = "lad22cd") %>% # drop lad22nm as it differs slightly in rgn lookup (e.g. 'city of')
   # "Fill in" the region for Welsh areas as 'Wales'
   mutate(
     rgn22nm = ifelse(stringr::str_starts(lad22cd, "W"), "Wales", rgn22nm),
@@ -145,5 +145,6 @@ area_lookup <- oa_lsoa_msoa_lad %>%
 # user; cf exported data)
 usethis::use_data(area_lookup,
                   # add other data here
-                  internal = TRUE)
+                  internal = TRUE,
+                  overwrite = TRUE)
 
