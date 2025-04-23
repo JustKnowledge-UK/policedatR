@@ -24,13 +24,17 @@ at December 2021.
 }
 \examples{
 
+\dontrun{
 # Get all LSOAs
+# Don't run as will take a long time
 all_lsoas <- get_lsoa_geometries()
 
 # Get LSOAs in the Greater London region
+# Don't run as will take a while
 london_lsoas <- get_lsoa_geometries(subset = list("rgn22nm" = "London"))
-
+}
 # Get LSOAs just in Haringey and Waltham Forest
 haringey_waltham_lsoas <- get_lsoa_geometries(subset = list("lad22nm" = c("Haringey", "Waltham Forest")))
+
 
 }

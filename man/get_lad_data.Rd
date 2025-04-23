@@ -63,10 +63,13 @@ Acquire stop and search data from police.uk API for  Local Authority Districts (
 }
 \examples{
 
+\dontrun{
 # Get the most recent 12 months of data for all LADs.
+# Don't run as will take a while.
 df <- get_lad_data()
-
+}
 # Get data for a subset of LADs, only the last 6 months
-df2 <- get_lad_data(subset = list("lad22nm" = c('Haringey','Waltham Forest'), num_months_backwards = 6))
+df2 <- get_lad_data(subset = list("lad22nm" = c('Haringey','Waltham Forest')), num_months_backwards = 1)
+
 
 }

@@ -24,8 +24,11 @@ at December 2022.
 }
 \examples{
 
+\dontrun{
+# Get all LAD geometries
+# Don't run as will take a while.
 lad_geometries <- get_lad_geometries()
-
+}
 # Get just Haringey and Lambeth geometries using 'lad22nm' variable
 subset_geometries <- get_lad_geometries(subset = list("lad22nm" = c("Haringey", "Lambeth")))
 

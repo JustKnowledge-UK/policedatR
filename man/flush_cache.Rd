@@ -25,5 +25,8 @@ Cache directory is specified by \code{rappdirs::user_cache_dir(appname = NULL, a
 }
 \examples{
 
+\dontrun{
+# This is interactive so don't run
 flush_cache()
+}
 }

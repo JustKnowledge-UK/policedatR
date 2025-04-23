@@ -24,13 +24,18 @@ at December 2021.
 }
 \examples{
 
+\dontrun{
 # Get all MSOAs
+# Don't run as will take a long time
 all_msoas <- get_msoa_geometries()
 
 # Get MSOAs in the Greater London region
+# Don't run as will take ~31 seconds
 london_msoas <- get_msoa_geometries(subset = list("rgn22nm" = "London"))
+}
 
 # Get MSOAs just in Haringey and Waltham Forest
 haringey_waltham_msoas <- get_msoa_geometries(subset = list("lad22nm" = c("Haringey", "Waltham Forest")))
+
 
 }

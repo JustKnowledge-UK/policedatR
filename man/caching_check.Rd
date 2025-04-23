@@ -39,6 +39,9 @@ items are evicted according to the Least Recently Used (LRU) eviction policy.
 }
 \examples{
 
+\dontrun{
+# This is interactive so don't run
 caching_check()
+}
 
 }
