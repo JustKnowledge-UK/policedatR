@@ -34,7 +34,9 @@ all_lsoas <- get_lsoa_geometries()
 london_lsoas <- get_lsoa_geometries(subset = list("rgn22nm" = "London"))
 }
 # Get LSOAs just in Haringey and Waltham Forest
-haringey_waltham_lsoas <- get_lsoa_geometries(subset = list("lad22nm" = c("Haringey", "Waltham Forest")))
+hw_lsoas <- get_lsoa_geometries(
+                subset = list("lad22nm" = c("Haringey", "Waltham Forest"))
+                )
 
 
 }

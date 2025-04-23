@@ -27,8 +27,11 @@ In practice the user does not need to directly call this function.
 }
 \examples{
 
-# Simplified example where the polgyon is defined by only three points
-fetch_police_data(body = list('poly' = "51.6094409248573,-0.127876986589682:51.6093817289251,-0.127378230001641:51.6093739825532,-0.12644271332808",
+# Simplified example where the polygon is defined by only three points
+fetch_police_data(body = list(
+  'poly' = "51.6094409248573,-0.127876986589682:
+            51.6093817289251,-0.127378230001641:
+            51.6093739825532,-0.12644271332808",
                             'date' = "2025-02"))
 
 }
