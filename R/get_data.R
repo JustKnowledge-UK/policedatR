@@ -236,11 +236,9 @@ get_region_data <- function(subset = NULL,
         }
 
         area_coords <- area_coords %>%
-          tibble::as_tibble() %>% # .name_repair = ~c("long","lat")) # %>%
-          dplyr::rename(
-            lat = V2, # lat is e.g. 52.62
-            long = V1 # long is e.g. -1.13
-          )
+          tibble::as_tibble(.name_repair = ~c("long","lat"))
+        # long is e.g. -1.13
+        # lat is e.g. 52.62
 
         # Create an areas df with no geometry column as placeholder in case no
         # data found for this area. This is so we can still count areas where
@@ -650,11 +648,9 @@ get_pfa_data <- function(subset = NULL,
         }
 
         area_coords <- area_coords %>%
-          tibble::as_tibble() %>% # .name_repair = ~c("long","lat")) # %>%
-          dplyr::rename(
-            lat = V2, # lat is e.g. 52.62
-            long = V1 # long is e.g. -1.13
-          )
+          tibble::as_tibble(.name_repair = ~c("long","lat"))
+        # long is e.g. -1.13
+        # lat is e.g. 52.62
 
         # Create an areas df with no geometry column as placeholder in case no
         # data found for this area. This is so we can still count areas where
@@ -1064,11 +1060,9 @@ get_lad_data <- function(subset = NULL,
             }
 
         area_coords <- area_coords %>%
-          tibble::as_tibble() %>% # .name_repair = ~c("long","lat")) # %>%
-          dplyr::rename(
-            lat = V2, # lat is e.g. 52.62
-            long = V1 # long is e.g. -1.13
-          )
+          tibble::as_tibble(.name_repair = ~c("long","lat"))
+        # long is e.g. -1.13
+        # lat is e.g. 52.62
 
         # Create an areas df with no geometry column as placeholder in case no
         # data found for this area. This is so we can still count areas where
@@ -1480,11 +1474,9 @@ get_msoa_data <- function(subset = NULL,
         }
 
         area_coords <- area_coords %>%
-          tibble::as_tibble() %>% # .name_repair = ~c("long","lat")) # %>%
-          dplyr::rename(
-            lat = V2, # lat is e.g. 52.62
-            long = V1 # long is e.g. -1.13
-          )
+          tibble::as_tibble(.name_repair = ~c("long","lat"))
+        # long is e.g. -1.13
+        # lat is e.g. 52.62
 
         # Create an areas df with no geometry column as placeholder in case no
         # data found for this area. This is so we can still count areas where
@@ -1902,11 +1894,9 @@ get_lsoa_data <- function(subset = NULL,
         }
 
         area_coords <- area_coords %>%
-          tibble::as_tibble() %>% # .name_repair = ~c("long","lat")) # %>%
-          dplyr::rename(
-            lat = V2, # lat is e.g. 52.62
-            long = V1 # long is e.g. -1.13
-          )
+          tibble::as_tibble(.name_repair = ~c("long","lat"))
+        # long is e.g. -1.13
+        # lat is e.g. 52.62
 
         # Create an areas df with no geometry column as placeholder in case no
         # data found for this area. This is so we can still count areas where
@@ -2322,11 +2312,9 @@ get_oa_data <- function(subset = NULL,
         }
 
         area_coords <- area_coords %>%
-          tibble::as_tibble() %>% # .name_repair = ~c("long","lat")) # %>%
-          dplyr::rename(
-            lat = V2, # lat is e.g. 52.62
-            long = V1 # long is e.g. -1.13
-          )
+          tibble::as_tibble(.name_repair = ~c("long","lat"))
+        # long is e.g. -1.13
+        # lat is e.g. 52.62
 
         # Create an areas df with no geometry column as placeholder in case no
         # data found for this area. This is so we can still count areas where
