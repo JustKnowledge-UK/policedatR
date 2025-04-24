@@ -20,7 +20,7 @@ newest_data <- function(){
   }
   m$date <- as.Date(m$date)
 
-  substr(max(m$date), 1, 7)
+  return(substr(max(m$date), 1, 7))
 
 }
 
@@ -47,6 +47,6 @@ oldest_data <- function(){
   }
   m$date <- as.Date(m$date)
 
-  substr(min(m$date), 1, 7)
+  return(substr(min(m$date), 1, 7))
 
 }
