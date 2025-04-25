@@ -31,8 +31,14 @@
 #'
 get_region_geometries <- function(subset = NULL){
 
+  # Initialise and specify parameters
+
   # API endpoint
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Regions_December_2022_Boundaries_EN_BFC_V2/FeatureServer/0/query"
+  # If subsetting, the size of the chunks to make
+  batch_size <- 90
+  # If subseting, the variable on which to subset
+  target_variable <- "RGN22CD"
 
   # Create cache directory - but ask user to agree
   policedatR::caching_check()
@@ -49,37 +55,38 @@ get_region_geometries <- function(subset = NULL){
     fetch_data <- policedatR::fetch_geometry_data
   }
 
-
-  # Subset options. Build on this later
-  if(is.null(subset)){
-    # If no subset has been requested, acquire all data
-    where_clause <- "1=1" # we could build options here
-
-    t1 <- Sys.time()
-    cat("\nStarting request")
-
-    response <- fetch_data(base_url = api_endpoint,
-                           where_clause = where_clause)
-
-
+  # Helper: Parse http response to sf and tidy
+  parse_response <- function(response) {
     geojson_data <- httr::content(response, as = "text")
     # Translate to sf object
-    region_geometries <- sf::st_read(geojson_data, quiet = TRUE) %>%
+    sf::st_read(geojson_data, quiet = TRUE) %>%
       # Tidy up
       janitor::clean_names() %>%
-      dplyr::select(rgn22cd, rgn22nm, shape_area, geometry)
+      dplyr::select(ends_with("cd"), ends_with("nm"), shape_area, geometry)
 
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units = "secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
-    cat("\nNote time includes local data processing")
+  }
+
+  # Helper: Run query with a where clause
+  run_query <- function(where_clause) {
+    response <- fetch_data(base_url = api_endpoint, where_clause = where_clause)
+    parse_response(response)
+  }
+
+  # Main logic
+  t1 <- Sys.time()
+  cat("\nStarting request")
+
+  # Subset options.
+  if(is.null(subset)){
+    # Run the request and parse the response
+    response <- fetch_data(base_url = api_endpoint, where_clause = "1=1")
+    geometries <- parse_response(response)
+
   }
   else{
     # If a subset has been requested, run in chunks of 90. This is limit set by API
-
     # First we need to get the relevant areas for the subset
     subset_variable <- names(subset)[1]
-    # Use toupper because that is how it is on API
     subset_values <- subset[[1]]
 
     target_values <- area_lookup %>%
@@ -87,49 +94,23 @@ get_region_geometries <- function(subset = NULL){
       dplyr::distinct(rgn22cd) %>%
       dplyr::pull()
 
-    # Initialise and specify parameters for the query
-    all_results <- list()
-    batch_size <- 90
-
-    target_variable <- "RGN22CD"
-
+    # Split the target values into chunks based on batch size
     chunks <- split(target_values, ceiling(seq_along(target_values) / batch_size))
 
-    t1 <- Sys.time()
-    cat("\nStarting request")
-    for(chunk in chunks){
-      # Update the where clause with the next batch
+    # For each chunk, fetch the data, parse it, and then bind all the rows together
+    geometries <- purrr::map_dfr(chunks, function(chunk) {
       where_clause <- paste0(target_variable, " IN ('", paste(chunk, collapse = "', '"), "')")
-
-      # Run the query
-      response <- fetch_data(base_url = api_endpoint,
-                             where_clause)
-
-      # Get the contents
-      geojson_data <- httr::content(response, as = "text")
-
-      # Translate to sf object
-      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
-
-      # Append results
-      all_results <- append(all_results, list(sf_chunk))
-
-
-    }
-
-    region_geometries <- dplyr::bind_rows(all_results) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      dplyr::select(rgn22cd, rgn22nm, shape_area, geometry)
-
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units = "secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
-    cat("\nNote time includes local data processing")
+      response <- fetch_data(base_url = api_endpoint, where_clause)
+      parse_response(response)
+    })
   }
 
+  t2 <- Sys.time()
+  time_elapsed <- difftime(t2, t1, units = "secs")
+  cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
+  cat("\nNote time includes local data processing")
 
-  return(region_geometries)
+  return(geometries)
 
 }
 
