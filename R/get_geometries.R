@@ -385,6 +385,9 @@ get_lad_geometries <- function(subset = NULL){
 
   # API endpoint
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Local_Authority_Districts_December_2022_UK_BFC_V2/FeatureServer/0/query"
+  result_offset <- 0 # We may want the user to be able specify this
+  max_records <- 400 # We may want the user to be able specify this
+
 
   # Create cache directory - but ask user to agree
   policedatR::caching_check()
@@ -396,8 +399,8 @@ get_lad_geometries <- function(subset = NULL){
   # don't get accepted and memoised. I've got a solution but not yet implemented
   fetch_data <- function(base_url,
                          where_clause,
-                         result_offset = 0,
-                         max_records = 2000 # GeoPortal max records in single response is 2000
+                         result_offset,
+                         max_records # GeoPortal max records in single response is 2000
   ) {
     params <- list(
       where = where_clause,  # Retrieve all records
@@ -443,21 +446,63 @@ get_lad_geometries <- function(subset = NULL){
     fetch_data <- memoise::memoise(fetch_data, cache = cd)
   }
 
-    # Subset options. Build on this later
+
+  # Subset options. Build on this later
   if(is.null(subset)){
+
+    all_results <- list()
     # If no subset has been requested, acquire all data
     where_clause <- "1=1" # we could build options here
 
     t1 <- Sys.time()
     cat("\nStarting request")
 
-    response <- fetch_data(base_url = api_endpoint,
-                           where_clause = where_clause)
+    # Repeat the request in 400 record batches
+    # Sometimes the API doesn't like doing lots of records in one and will throw a
+    # 504 (timeout). So we keep retrying, each time halving the requested payload.
+    rep <- 1
+    max_tries <- 10
 
+    repeat{
+      cat(paste0("\nStarting page ", rep))
+      attempt <- 1
 
-    geojson_data <- httr::content(response, as = "text")
+      # While loop repeats request with payload halved each time until it succeeds
+      # or reaches max_tries
+      while(attempt <= max_tries){
+        cat(paste0("\nAttempt ", attempt))
+        cat(paste0("\nTrying with max records = ", max_records))
+        response <- try(
+          fetch_data(base_url = api_endpoint,
+                     where_clause,
+                     result_offset,
+                     max_records)
+        )
+
+        if(!inherits(response, "try-error")){
+          cat(paste0("\nSuccess with max records = ", max_records))
+          break
+        }
+
+        attempt <- attempt + 1
+        max_records <- max_records / 2 # try again by halving the payload
+        cat("\nRetrying...")
+      }
+
+      geojson_data <- httr::content(response, as = "text")
+      # Translate to sf object
+      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
+      # Stop if no more records
+      if (nrow(sf_chunk) == 0) break
+      # Append results
+      all_results <- append(all_results, list(sf_chunk))
+      result_offset <- result_offset + max_records
+      max_records <- 400 # reset max_records
+      rep <- rep + 1
+    }
+
     # Translate to sf object
-    lad_geometries <- sf::st_read(geojson_data, quiet = TRUE) %>%
+    lad_geometries <- dplyr::bind_rows(all_results) %>%
       # Tidy up
       janitor::clean_names() %>%
       # Drop areas in Scotland and Northern Ireland as we are only concerned with
