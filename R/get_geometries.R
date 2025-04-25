@@ -66,12 +66,6 @@ get_region_geometries <- function(subset = NULL){
 
   }
 
-  # Helper: Run query with a where clause
-  run_query <- function(where_clause) {
-    response <- fetch_data(base_url = api_endpoint, where_clause = where_clause)
-    parse_response(response)
-  }
-
   # Main logic
   t1 <- Sys.time()
   cat("\nStarting request")
@@ -150,6 +144,10 @@ get_pfa_geometries <- function(subset = NULL){
 
   # API endpoint
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Police_Force_Areas_December_2022_EW_BFC/FeatureServer/0/query"
+  # If subsetting, the size of the chunks to make
+  batch_size <- 90
+  # If subseting, the variable on which to subset
+  target_variable <- "PFA22CD"
 
   # Create cache directory - but ask user to agree
   policedatR::caching_check()
@@ -166,34 +164,29 @@ get_pfa_geometries <- function(subset = NULL){
     fetch_data <- policedatR::fetch_geometry_data
   }
 
+  # Helper: Parse http response to sf and tidy
+  parse_response <- function(response) {
+    geojson_data <- httr::content(response, as = "text")
+    # Translate to sf object
+    sf::st_read(geojson_data, quiet = TRUE) %>%
+      # Tidy up
+      janitor::clean_names() %>%
+      dplyr::select(ends_with("cd"), ends_with("nm"), shape_area, geometry)
+
+  }
+
+  t1 <- Sys.time()
+  cat("\nStarting request")
 
   # Subset options. Build on this later
   if(is.null(subset)){
-    # If no subset has been requested, acquire all data
-    where_clause <- "1=1" # we could build options here
+    # Run the request and parse the response
+    response <- fetch_data(base_url = api_endpoint, where_clause = "1=1")
+    geometries <- parse_response(response)
 
-    t1 <- Sys.time()
-    cat("\nStarting request")
-
-    response <- fetch_data(base_url = api_endpoint,
-                           where_clause = where_clause)
-
-
-    geojson_data <- httr::content(response, as = "text")
-    # Translate to sf object
-    pfa_geometries <- sf::st_read(geojson_data, quiet = TRUE) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      dplyr::select(pfa22cd, pfa22nm, shape_area, geometry)
-
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units = "secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
-    cat("\nNote time includes local data processing")
   }
   else{
     # If a subset has been requested, run in chunks of 90. This is limit set by API
-
     # First we need to get the relevant areas for the subset
     subset_variable <- names(subset)[1]
     # Use toupper because that is how it is on API
@@ -206,47 +199,24 @@ get_pfa_geometries <- function(subset = NULL){
 
     # Initialise and specify parameters for the query
     all_results <- list()
-    batch_size <- 90
 
-    target_variable <- "PFA22CD"
 
     chunks <- split(target_values, ceiling(seq_along(target_values) / batch_size))
 
-    t1 <- Sys.time()
-    cat("\nStarting request")
-    for(chunk in chunks){
-      # Update the where clause with the next batch
+    # For each chunk, fetch the data, parse it, and then bind all the rows together
+    geometries <- purrr::map_dfr(chunks, function(chunk) {
       where_clause <- paste0(target_variable, " IN ('", paste(chunk, collapse = "', '"), "')")
-
-      # Run the query
-      response <- fetch_data(base_url = api_endpoint,
-                             where_clause)
-
-      # Get the contents
-      geojson_data <- httr::content(response, as = "text")
-
-      # Translate to sf object
-      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
-
-      # Append results
-      all_results <- append(all_results, list(sf_chunk))
-
-
-    }
-
-    pfa_geometries <- dplyr::bind_rows(all_results) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      dplyr::select(pfa22cd, pfa22nm, shape_area, geometry)
-
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units = "secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
-    cat("\nNote time includes local data processing")
+      response <- fetch_data(base_url = api_endpoint, where_clause)
+      parse_response(response)
+    })
   }
 
+  t2 <- Sys.time()
+  time_elapsed <- difftime(t2, t1, units = "secs")
+  cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
+  cat("\nNote time includes local data processing")
 
-  return(pfa_geometries)
+  return(geometries)
 
 }
 
@@ -286,7 +256,10 @@ get_lad_geometries <- function(subset = NULL){
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Local_Authority_Districts_December_2022_UK_BFC_V2/FeatureServer/0/query"
   result_offset <- 0 # We may want the user to be able specify this
   max_records <- 400 # We may want the user to be able specify this
-
+  # For subsetting, the size of the batch
+  batch_size <- 90
+  # For subsetting, the variable on which to subset
+  target_variable <- "LAD22CD"
 
   # Create cache directory - but ask user to agree
   policedatR::caching_check()
@@ -303,16 +276,28 @@ get_lad_geometries <- function(subset = NULL){
     fetch_data <- policedatR::fetch_geometry_data
   }
 
-  # Subset options. Build on this later
+  # Helper to process and clean each chunk
+  process_chunk <- function(response) {
+    geojson_data <- httr::content(response, as = "text")
+    sf::st_read(geojson_data, quiet = TRUE)
+  }
+
+  # Helper to clean and filter the final geometry
+  tidy_lad_geometries <- function(data) {
+    data %>%
+      janitor::clean_names() %>%
+      dplyr::filter(!stringr::str_starts(lad22cd, "S"),
+                    !stringr::str_starts(lad22cd, "N")) %>%
+      dplyr::select(lad22cd, lad22nm, shape_area, geometry)
+  }
+
+
+  t1 <- Sys.time()
+  cat("\nStarting request")
+  # Subset options.
   if(is.null(subset)){
-
-    all_results <- list()
     # If no subset has been requested, acquire all data
-    where_clause <- "1=1" # we could build options here
-
-    t1 <- Sys.time()
-    cat("\nStarting request")
-
+    all_results <- list()
     # Repeat the request in 400 record batches
     # Sometimes the API doesn't like doing lots of records in one and will throw a
     # 504 (timeout). So we keep retrying, each time halving the requested payload.
@@ -322,61 +307,48 @@ get_lad_geometries <- function(subset = NULL){
     repeat{
       cat(paste0("\nStarting page ", rep))
       attempt <- 1
+      local_max <- max_records
 
       # While loop repeats request with payload halved each time until it succeeds
       # or reaches max_tries
       while(attempt <= max_tries){
         cat(paste0("\nAttempt ", attempt))
-        cat(paste0("\nTrying with max records = ", max_records))
+        cat(paste0("\nTrying with max records = ", local_max))
         response <- try(
           fetch_data(base_url = api_endpoint,
-                     where_clause,
+                     where_clause = "1=1",
                      result_offset,
-                     max_records)
+                     local_max)
         )
 
         if(!inherits(response, "try-error")){
-          cat(paste0("\nSuccess with max records = ", max_records))
+          cat(paste0("\nSuccess with max records = ", local_max))
           break
         }
 
         attempt <- attempt + 1
-        max_records <- max_records / 2 # try again by halving the payload
+        local_max <- floor(local_max / 2) # try again by halving the payload
         cat("\nRetrying...")
       }
 
-      geojson_data <- httr::content(response, as = "text")
       # Translate to sf object
-      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
+      sf_chunk <- process_chunk(response)
       # Stop if no more records
       if (nrow(sf_chunk) == 0) break
       # Append results
       all_results <- append(all_results, list(sf_chunk))
-      result_offset <- result_offset + max_records
-      max_records <- 400 # reset max_records
+      result_offset <- result_offset + local_max
       rep <- rep + 1
     }
 
-    # Translate to sf object
-    lad_geometries <- dplyr::bind_rows(all_results) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      # Drop areas in Scotland and Northern Ireland as we are only concerned with
-      # policing in England and Wales
-      dplyr::filter(!(stringr::str_starts(lad22cd, "S")) & !(stringr::str_starts(lad22cd, "N"))) %>%
-      dplyr::select(lad22cd, lad22nm, shape_area, geometry)
-
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units = "secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
-    cat("\nNote time includes local data processing")
+    # Bind all rows and tidy
+    geometries <- dplyr::bind_rows(all_results) %>%
+      tidy_lad_geometries()
   }
   else{
     # If a subset has been requested, run in chunks of 90. This is limit set by API
-
     # First we need to get the relevant areas for the subset
     subset_variable <- names(subset)[1]
-    # Use toupper because that is how it is on API
     subset_values <- subset[[1]]
 
     target_values <- area_lookup %>%
@@ -384,52 +356,28 @@ get_lad_geometries <- function(subset = NULL){
       dplyr::distinct(lad22cd) %>%
       dplyr::pull()
 
-    # Initialise and specify parameters for the query
     all_results <- list()
-    batch_size <- 90
-
-    target_variable <- "LAD22CD"
 
     chunks <- split(target_values, ceiling(seq_along(target_values) / batch_size))
 
-    t1 <- Sys.time()
-    cat("\nStarting request")
-    for(chunk in chunks){
-      # Update the where clause with the next batch
+    # Helper: Run query with where clause and process
+    run_query <- function(chunk) {
       where_clause <- paste0(target_variable, " IN ('", paste(chunk, collapse = "', '"), "')")
-
-      # Run the query
-      response <- fetch_data(base_url = api_endpoint,
-                             where_clause)
-
-      # Get the contents
-      geojson_data <- httr::content(response, as = "text")
-
-      # Translate to sf object
-      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
-
-      # Append results
-      all_results <- append(all_results, list(sf_chunk))
-
-
+      response <- fetch_data(api_endpoint, where_clause)
+      process_chunk(response)
     }
 
-    lad_geometries <- dplyr::bind_rows(all_results) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      # Drop areas in Scotland and Northern Ireland as we are only concerned with
-      # policing in England and Wales
-      dplyr::filter(!(stringr::str_starts(lad22cd, "S")) & !(stringr::str_starts(lad22cd, "N"))) %>%
-      dplyr::select(lad22cd, lad22nm, shape_area, geometry)
+    # For each chunk, run the query, process it, and row bind, then tidy
+    geometries <- purrr::map_dfr(chunks, run_query) %>% tidy_lad_geometries()
 
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units = "secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
-    cat("\nNote time includes local data processing")
   }
 
+  t2 <- Sys.time()
+  time_elapsed <- difftime(t2, t1, units = "secs")
+  cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
+  cat("\nNote time includes local data processing")
 
-  return(lad_geometries)
+  return(geometries)
 
 }
 
@@ -474,6 +422,11 @@ get_msoa_geometries <- function(subset = NULL){
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Middle_layer_Super_Output_Areas_December_2021_Boundaries_EW_BFC_V7/FeatureServer/0/query"
   result_offset <- 0 # We may want the user to be able specify this
   max_records <- 2000 # We may want the user to be able specify this
+  # For subsetting, the size of the batch
+  batch_size <- 90
+  # For subsetting, the variable on which to subset
+  target_variable <- "MSOA21CD"
+
   # Create cache directory - but ask user to agree
   policedatR::caching_check()
   caching <- Sys.getenv("caching")
@@ -489,19 +442,30 @@ get_msoa_geometries <- function(subset = NULL){
     fetch_data <- policedatR::fetch_geometry_data
   }
 
-  # Initialise
-  all_results <- list()
+  # Helper to process and clean each chunk
+  process_chunk <- function(response) {
+    geojson_data <- httr::content(response, as = "text")
+    sf::st_read(geojson_data, quiet = TRUE)
+  }
+
+  # Helper to clean and filter the final geometry
+  tidy_geometries <- function(data) {
+    data %>%
+      janitor::clean_names() %>%
+      dplyr::select(ends_with("cd"), ends_with("nm"), shape_area, geometry)
+  }
+
+  t1 <- Sys.time()
+  cat("\nStarting request.")
+
   # result_offset <- 0
   # max_records <- 2000
-
-  # Subset options. Build on this later
+  # Subset options.
   if(is.null(subset)){
+    all_results <- list()
     # If no subset has been requested, acquire all data
     # Here pagination is required as max records in single response is 2000
-    where_clause <- "1=1" # we could build options here
 
-    t1 <- Sys.time()
-    cat("\nStarting request.")
 
     # Repeat the request in 2000 record batches
     # Sometimes the API doesn't like doing 2000 records in one and will throw a
@@ -513,53 +477,46 @@ get_msoa_geometries <- function(subset = NULL){
     repeat{
       cat(paste0("\nStarting page ", rep))
       attempt <- 1
+      local_max <- max_records
 
       # While loop repeats request with payload halved each time until it succeeds
       # or reaches max_tries
       while(attempt <= max_tries){
         cat(paste0("\nAttempt ", attempt))
-        cat(paste0("\nTrying with max records = ", max_records))
+        cat(paste0("\nTrying with max records = ", local_max))
         response <- try(
           fetch_data(base_url = api_endpoint,
-                     where_clause,
+                     where_clause = "1=1",
                      result_offset,
-                     max_records)
+                     local_max)
         )
 
         if(!inherits(response, "try-error")){
-          cat(paste0("\nSuccess with max records = ", max_records))
+          cat(paste0("\nSuccess with max records = ", local_max))
           break
         }
 
         attempt <- attempt + 1
-        max_records <- max_records / 2 # try again by halving the payload
+        local_max <- floor(local_max / 2) # try again by halving the payload
         cat("\nRetrying...")
       }
 
-      geojson_data <- httr::content(response, as = "text")
       # Translate to sf object
-      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
+      sf_chunk <- process_chunk(response)
       # Stop if no more records
       if (nrow(sf_chunk) == 0) break
       # Append results
       all_results <- append(all_results, list(sf_chunk))
-      result_offset <- result_offset + max_records
-      max_records <- 2000 # reset max_records
+      result_offset <- result_offset + local_max
       rep <- rep + 1
     }
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units = "secs")
-    cat(paste0("\nRequest done in: ", time_elapsed, " seconds"))
-    cat("\nNote time includes local data processing")
 
-    msoa_geometries <- dplyr::bind_rows(all_results) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      dplyr::select(msoa21cd, msoa21nm, shape_area, geometry)
+    # Bind rows and tidy
+    geometries <- dplyr::bind_rows(all_results) %>%
+      tidy_geometries()
   }
   else{
     # If a subset has been requested, run in chunks of 90. This is limit set by API
-
     # First we need to get the relevant areas for the subset
     subset_variable <- names(subset)[1]
     # Use toupper because that is how it is on API
@@ -572,46 +529,28 @@ get_msoa_geometries <- function(subset = NULL){
 
     # Initialise and specify parameters for the query
     all_results <- list()
-    batch_size <- 90
-
-    target_variable <- "MSOA21CD"
 
     chunks <- split(target_values, ceiling(seq_along(target_values) / batch_size))
 
-    t1 <- Sys.time()
-    cat("\nStarting request")
-    for(chunk in chunks){
-      # Update the where clause with the next batch
+    # Helper: Run query with where clause and process
+    run_query <- function(chunk) {
       where_clause <- paste0(target_variable, " IN ('", paste(chunk, collapse = "', '"), "')")
-
-      # Run the query
-      response <- fetch_data(base_url = api_endpoint,
-                             where_clause,
-                             result_offset, # redundant here but required for function
-                             max_records) # redundant here but required for function
-
-      # Get the contents
-      geojson_data <- httr::content(response, as = "text")
-
-      # Translate to sf object
-      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
-
-      # Append results
-      all_results <- append(all_results, list(sf_chunk))
-
+      response <- fetch_data(api_endpoint, where_clause)
+      process_chunk(response)
     }
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units="secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed,3), " seconds"))
 
-    msoa_geometries <- dplyr::bind_rows(all_results) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      dplyr::select(msoa21cd, msoa21nm, shape_area, geometry)
+    # For each chunk, run the query, process it, and row bind, then tidy
+    geometries <- purrr::map_dfr(chunks, run_query) %>% tidy_geometries()
+
+
   }
 
+  t2 <- Sys.time()
+  time_elapsed <- difftime(t2, t1, units="secs")
+  cat(paste0("\nRequest done in: ", round(time_elapsed,3), " seconds"))
 
-  return(msoa_geometries)
+
+  return(geometries)
 
 }
 
@@ -656,6 +595,11 @@ get_lsoa_geometries <- function(subset = NULL){
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Lower_layer_Super_Output_Areas_December_2021_Boundaries_EW_BFC_V10/FeatureServer/0/query"
   result_offset <- 0 # We may want the user to be able specify this
   max_records <- 2000 # We may want the user to be able specify this
+  # For subsetting, the size of the batch
+  batch_size <- 90
+  # For subsetting, the variable on which to subset
+  target_variable <- "LSOA21CD"
+
   # Create cache directory - but ask user to agree
   policedatR::caching_check()
   caching <- Sys.getenv("caching")
@@ -671,19 +615,30 @@ get_lsoa_geometries <- function(subset = NULL){
     fetch_data <- policedatR::fetch_geometry_data
   }
 
-  # Initialise
-  all_results <- list()
+  # Helper to process and clean each chunk
+  process_chunk <- function(response) {
+    geojson_data <- httr::content(response, as = "text")
+    sf::st_read(geojson_data, quiet = TRUE)
+  }
+
+  # Helper to clean and filter the final geometry
+  tidy_geometries <- function(data) {
+    data %>%
+      janitor::clean_names() %>%
+      dplyr::select(ends_with("cd"), ends_with("nm"), shape_area, geometry)
+  }
+
+
+  t1 <- Sys.time()
+  cat("\nStarting request.")
   # result_offset <- 0
   # max_records <- 2000
 
   # Subset options. Build on this later
   if(is.null(subset)){
+    all_results <- list()
     # If no subset has been requested, acquire all data
     # Here pagination is required as max records in single response is 2000
-    where_clause <- "1=1" # we could build options here
-
-    t1 <- Sys.time()
-    cat("\nStarting request.")
 
     # Repeat the request in 2000 record batches
     # Sometimes the API doesn't like doing 2000 records in one and will throw a
@@ -695,49 +650,43 @@ get_lsoa_geometries <- function(subset = NULL){
     repeat{
       cat(paste0("\nStarting page ", rep))
       attempt <- 1
+      local_max <- max_records
 
       # While loop repeats request with payload halved each time until it succeeds
       # or reaches max_tries
       while(attempt <= max_tries){
         cat(paste0("\nAttempt ", attempt))
-        cat(paste0("\nTrying with max records = ", max_records))
+        cat(paste0("\nTrying with max records = ", local_max))
         response <- try(
           fetch_data(base_url = api_endpoint,
-                     where_clause,
+                     where_clause = "1=1",
                      result_offset,
-                     max_records)
+                     local_max)
         )
 
         if(!inherits(response, "try-error")){
-          cat(paste0("\nSuccess with max records = ", max_records))
+          cat(paste0("\nSuccess with max records = ", local_max))
           break
         }
 
         attempt <- attempt + 1
-        max_records <- max_records / 2 # try again by halving the payload
+        local_max <- floor(local_max / 2) # try again by halving the payload
         cat("\nRetrying...")
       }
 
-      geojson_data <- httr::content(response, as = "text")
       # Translate to sf object
-      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
+      sf_chunk <- process_chunk(response)
       # Stop if no more records
       if (nrow(sf_chunk) == 0) break
       # Append results
       all_results <- append(all_results, list(sf_chunk))
-      result_offset <- result_offset + max_records
-      max_records <- 2000 # reset max_records
+      result_offset <- result_offset + local_max
       rep <- rep + 1
     }
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units = "secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed,3), " seconds"))
-    cat("\nNote time includes local data processing")
 
-    lsoa_geometries <- dplyr::bind_rows(all_results) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      dplyr::select(lsoa21cd, lsoa21nm, shape_area, geometry)
+    # Bind rows and tidy
+    geometries <- dplyr::bind_rows(all_results) %>%
+      tidy_geometries()
   }
   else{
     # If a subset has been requested, run in chunks of 90. This is limit set by API
@@ -754,47 +703,27 @@ get_lsoa_geometries <- function(subset = NULL){
 
     # Initialise and specify parameters for the query
     all_results <- list()
-    batch_size <- 90
-
-    target_variable <- "LSOA21CD"
 
     chunks <- split(target_values, ceiling(seq_along(target_values) / batch_size))
 
-    t1 <- Sys.time()
-    cat("\nStarting request")
-    for(chunk in chunks){
-      # Update the where clause with the next batch
+    # Helper: Run query with where clause and process
+    run_query <- function(chunk) {
       where_clause <- paste0(target_variable, " IN ('", paste(chunk, collapse = "', '"), "')")
-
-      # Run the query
-      response <- fetch_data(base_url = api_endpoint,
-                             where_clause,
-                             result_offset, # redundant here but function requires
-                             max_records # redundant here but function requires
-      )
-
-      # Get the contents
-      geojson_data <- httr::content(response, as = "text")
-
-      # Translate to sf object
-      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
-
-      # Append results
-      all_results <- append(all_results, list(sf_chunk))
-
+      response <- fetch_data(api_endpoint, where_clause)
+      process_chunk(response)
     }
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units="secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed,3), " seconds"))
 
-    lsoa_geometries <- dplyr::bind_rows(all_results) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      dplyr::select(lsoa21cd, lsoa21nm, shape_area, geometry)
+    # For each chunk, run the query, process it, and row bind, then tidy
+    geometries <- purrr::map_dfr(chunks, run_query) %>% tidy_geometries()
+
+
   }
 
+  t2 <- Sys.time()
+  time_elapsed <- difftime(t2, t1, units="secs")
+  cat(paste0("\nRequest done in: ", round(time_elapsed,3), " seconds"))
 
-  return(lsoa_geometries)
+  return(geometries)
 
 }
 
@@ -837,6 +766,11 @@ get_oa_geometries <- function(subset = NULL){
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Output_Areas_2021_EW_BFC_V8/FeatureServer/0/query"
   result_offset <- 0 # We may want the user to be able specify this
   max_records <- 2000 # We may want the user to be able specify this
+  # For subsetting, the size of the batch
+  batch_size <- 90
+  # For subsetting, the variable on which to subset
+  target_variable <- "OA21CD"
+
   # Create cache directory - but ask user to agree
   policedatR::caching_check()
   caching <- Sys.getenv("caching")
@@ -852,19 +786,28 @@ get_oa_geometries <- function(subset = NULL){
     fetch_data <- policedatR::fetch_geometry_data
   }
 
-  # Initialise
-  all_results <- list()
-  # result_offset <- 0
-  # max_records <- 2000
+  # Helper to process and clean each chunk
+  process_chunk <- function(response) {
+    geojson_data <- httr::content(response, as = "text")
+    sf::st_read(geojson_data, quiet = TRUE)
+  }
+
+  # Helper to clean and filter the final geometry
+  tidy_geometries <- function(data) {
+    data %>%
+      janitor::clean_names() %>%
+      dplyr::select(oa21cd, shape_area, geometry)
+  }
+
+  t1 <- Sys.time()
+  cat("\nStarting request.")
+
 
   # Subset options. Build on this later
   if(is.null(subset)){
+    all_results <- list()
     # If no subset has been requested, acquire all data
     # Here pagination is required as max records in single response is 2000
-    where_clause <- "1=1" # we could build options here
-
-    t1 <- Sys.time()
-    cat("\nStarting request.")
 
     # Repeat the request in 2000 record batches
     # Sometimes the API doesn't like doing 2000 records in one and will throw a
@@ -876,49 +819,45 @@ get_oa_geometries <- function(subset = NULL){
     repeat{
       cat(paste0("\nStarting page ", rep))
       attempt <- 1
+      local_max <- max_records
 
       # While loop repeats request with payload halved each time until it succeeds
       # or reaches max_tries
       while(attempt <= max_tries){
         cat(paste0("\nAttempt ", attempt))
-        cat(paste0("\nTrying with max records = ", max_records))
+        cat(paste0("\nTrying with max records = ", local_max))
         response <- try(
           fetch_data(base_url = api_endpoint,
-                     where_clause,
+                     where_clause="1=1",
                      result_offset,
-                     max_records)
+                     local_max)
         )
 
         if(!inherits(response, "try-error")){
-          cat(paste0("\nSuccess with max records = ", max_records))
+          cat(paste0("\nSuccess with max records = ", local_max))
           break
         }
 
         attempt <- attempt + 1
-        max_records <- max_records / 2 # try again by halving the payload
+        local_max <- floor(local_max / 2) # try again by halving the payload
         cat("\nRetrying...")
       }
 
-      geojson_data <- httr::content(response, as = "text")
       # Translate to sf object
-      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
+      sf_chunk <- process_chunk(response)
       # Stop if no more records
       if (nrow(sf_chunk) == 0) break
       # Append results
       all_results <- append(all_results, list(sf_chunk))
-      result_offset <- result_offset + max_records
-      max_records <- 2000 # reset max_records
+      result_offset <- result_offset + local_max
       rep <- rep + 1
-    }
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2, t1, units = "secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed,3), " seconds"))
-    cat("\nNote time includes local data processing")
 
-    oa_geometries <- dplyr::bind_rows(all_results) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      dplyr::select(oa21cd, shape_area, geometry)
+    }
+
+    # Bind rows and tidy
+    geometries <- dplyr::bind_rows(all_results) %>%
+      tidy_geometries()
+
   }
   else{
     # If a subset has been requested, run in chunks of 90. This is limit set by API
@@ -933,49 +872,27 @@ get_oa_geometries <- function(subset = NULL){
       dplyr::distinct(oa21cd) %>%
       dplyr::pull()
 
-    # Initialise and specify parameters for the query
     all_results <- list()
-    batch_size <- 90
-
-    target_variable <- "OA21CD"
 
     chunks <- split(target_values, ceiling(seq_along(target_values) / batch_size))
 
-    t1 <- Sys.time()
-    cat("\nStarting request")
-    for(chunk in chunks){
-      # Update the where clause with the next batch
+    # Helper: Run query with where clause and process
+    run_query <- function(chunk) {
       where_clause <- paste0(target_variable, " IN ('", paste(chunk, collapse = "', '"), "')")
-
-      # Run the query
-      response <- fetch_data(base_url = api_endpoint,
-                             where_clause,
-                             result_offset, # redundant here but function requires
-                             max_records # redundant here but function requires
-      )
-
-      # Get the contents
-      geojson_data <- httr::content(response, as = "text")
-
-      # Translate to sf object
-      sf_chunk <- sf::st_read(geojson_data, quiet = TRUE)
-
-      # Append results
-      all_results <- append(all_results, list(sf_chunk))
-
+      response <- fetch_data(api_endpoint, where_clause)
+      process_chunk(response)
     }
-    t2 <- Sys.time()
-    time_elapsed <- difftime(t2,t1, units = "secs")
-    cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
 
-    oa_geometries <- dplyr::bind_rows(all_results) %>%
-      # Tidy up
-      janitor::clean_names() %>%
-      dplyr::select(oa21cd, shape_area, geometry)
+    # For each chunk, run the query, process it, and row bind, then tidy
+    geometries <- purrr::map_dfr(chunks, run_query) %>% tidy_geometries()
+
   }
 
+  t2 <- Sys.time()
+  time_elapsed <- difftime(t2,t1, units = "secs")
+  cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
 
-  return(oa_geometries)
+  return(geometries)
 
 }
 
