@@ -39,57 +39,16 @@ get_region_geometries <- function(subset = NULL){
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
-  # Specify the request as a function so it can be memoised
-  # Note we need to do something with the status code so that non-200 responses
-  # don't get accepted and memoised. I've got a solution but not yet implemented
-  fetch_data <- function(base_url,
-                         where_clause,
-                         result_offset = 0,
-                         max_records = 2000 # GeoPortal max records in single response is 2000
-  ) {
-    params <- list(
-      where = where_clause,  # Retrieve all records
-      outFields =  "*", # "*" specifies all. I tried specifying fewer outfields but it doesn't speed things up. No need to specify geometry as this is assumed by default
-      outSR = "4326",
-      f = "geojson",
-      resultOffset = result_offset, # for pagination
-      resultRecordCount = max_records
-    )
-
-    # Initialise 504. Geoportal API saves 504 error to response content, so we
-    # have to look there for the error. But let's only look when it seems likely
-    # the request failed. we do this by using the length of the response - if it
-    # looks really short, it's probably failed, so take a look and see if indeed
-    # an error is reported
-    error_504 <- FALSE
-
-    response <- httr::GET(base_url, query = params)
-
-    if(length(response[["content"]]) < 1000){
-      peek_content <- httr::content(response, as = "text")
-      if(grepl("error", peek_content, ignore.case = TRUE) && grepl("504", peek_content)){
-        error_504 <- TRUE
-        #max_records <- max_records / 2
-      }
-      else {
-        error_504 <- FALSE
-      }
-    }
-    if (httr::status_code(response) == 200 && error_504 == FALSE) { # add check in body for 504
-      return(response)
-      #content(response, "text")  # Convert response to text for caching
-    }
-    else {
-      stop(paste("Error: Status code ", httr::status_code(response)," (but body may contain 504)"))
-    }
-  }
-
-
+  # If caching, memoise the fetch function, otherwise use as is
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
     # Memoise the function
-    fetch_data <- memoise::memoise(fetch_data, cache = cd)
+    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
   }
+  else{
+    fetch_data <- policedatR::fetch_geometry_data
+  }
+
 
   # Subset options. Build on this later
   if(is.null(subset)){
@@ -216,57 +175,16 @@ get_pfa_geometries <- function(subset = NULL){
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
-  # Specify the request as a function so it can be memoised
-  # Note we need to do something with the status code so that non-200 responses
-  # don't get accepted and memoised. I've got a solution but not yet implemented
-  fetch_data <- function(base_url,
-                         where_clause,
-                         result_offset = 0,
-                         max_records = 2000 # GeoPortal max records in single response is 2000
-  ) {
-    params <- list(
-      where = where_clause,  # Retrieve all records
-      outFields =  "*", # "*" specifies all. I tried specifying fewer outfields but it doesn't speed things up. No need to specify geometry as this is assumed by default
-      outSR = "4326",
-      f = "geojson",
-      resultOffset = result_offset, # for pagination
-      resultRecordCount = max_records
-    )
-
-    # Initialise 504. Geoportal API saves 504 error to response content, so we
-    # have to look there for the error. But let's only look when it seems likely
-    # the request failed. we do this by using the length of the response - if it
-    # looks really short, it's probably failed, so take a look and see if indeed
-    # an error is reported
-    error_504 <- FALSE
-
-    response <- httr::GET(base_url, query = params)
-
-    if(length(response[["content"]]) < 1000){
-      peek_content <- httr::content(response, as = "text")
-      if(grepl("error", peek_content, ignore.case = TRUE) && grepl("504", peek_content)){
-        error_504 <- TRUE
-        #max_records <- max_records / 2
-      }
-      else {
-        error_504 <- FALSE
-      }
-    }
-    if (httr::status_code(response) == 200 && error_504 == FALSE) { # add check in body for 504
-      return(response)
-      #content(response, "text")  # Convert response to text for caching
-    }
-    else {
-      stop(paste("Error: Status code ", httr::status_code(response)," (but body may contain 504)"))
-    }
-  }
-
-
+  # If caching, memoise the fetch function, otherwise use as is
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
     # Memoise the function
-    fetch_data <- memoise::memoise(fetch_data, cache = cd)
+    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
   }
+  else{
+    fetch_data <- policedatR::fetch_geometry_data
+  }
+
 
   # Subset options. Build on this later
   if(is.null(subset)){
@@ -394,58 +312,15 @@ get_lad_geometries <- function(subset = NULL){
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
-  # Specify the request as a function so it can be memoised
-  # Note we need to do something with the status code so that non-200 responses
-  # don't get accepted and memoised. I've got a solution but not yet implemented
-  fetch_data <- function(base_url,
-                         where_clause,
-                         result_offset,
-                         max_records # GeoPortal max records in single response is 2000
-  ) {
-    params <- list(
-      where = where_clause,  # Retrieve all records
-      outFields =  "*", # "*" specifies all. I tried specifying fewer outfields but it doesn't speed things up. No need to specify geometry as this is assumed by default
-      outSR = "4326",
-      f = "geojson",
-      resultOffset = result_offset, # for pagination
-      resultRecordCount = max_records
-    )
-
-    # Initialise 504. Geoportal API saves 504 error to response content, so we
-    # have to look there for the error. But let's only look when it seems likely
-    # the request failed. we do this by using the length of the response - if it
-    # looks really short, it's probably failed, so take a look and see if indeed
-    # an error is reported
-    error_504 <- FALSE
-
-    response <- httr::GET(base_url, query = params)
-
-    if(length(response[["content"]]) < 1000){
-      peek_content <- httr::content(response, as = "text")
-      if(grepl("error", peek_content, ignore.case = TRUE) && grepl("504", peek_content)){
-        error_504 <- TRUE
-        #max_records <- max_records / 2
-      }
-      else {
-        error_504 <- FALSE
-      }
-    }
-    if (httr::status_code(response) == 200 && error_504 == FALSE) { # add check in body for 504
-      return(response)
-      #content(response, "text")  # Convert response to text for caching
-    }
-    else {
-      stop(paste("Error: Status code ", httr::status_code(response)," (but body may contain 504)"))
-    }
-  }
-
-
+  # If caching, memoise the fetch function, otherwise use as is
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
     # Memoise the function
-    fetch_data <- memoise::memoise(fetch_data, cache = cd)
+    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
   }
-
+  else{
+    fetch_data <- policedatR::fetch_geometry_data
+  }
 
   # Subset options. Build on this later
   if(is.null(subset)){
@@ -623,56 +498,14 @@ get_msoa_geometries <- function(subset = NULL){
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
-  # Specify the request as a function so it can be memoised
-  # Note we need to do something with the status code so that non-200 responses
-  # don't get accepted and memoised. I've got a solution but not yet implemented
-  fetch_data <- function(base_url,
-                         where_clause,
-                         result_offset,
-                         max_records # GeoPortal max records in single response is 2000
-                         ) {
-    params <- list(
-      where = where_clause,  # Retrieve all records
-      outFields =  "*", # "*" specifies all. I tried specifying fewer outfields but it doesn't speed things up. No need to specify geometry as this is assumed by default
-      outSR = "4326",
-      f = "geojson",
-      resultOffset = result_offset, # for pagination
-      resultRecordCount = max_records
-    )
-
-    # Initialise 504. Geoportal API saves 504 error to response content, so we
-    # have to look there for the error. But let's only look when it seems likely
-    # the request failed. we do this by using the length of the response - if it
-    # looks really short, it's probably failed, so take a look and see if indeed
-    # an error is reported
-    error_504 <- FALSE
-
-    response <- httr::GET(base_url, query = params)
-
-    if(length(response[["content"]]) < 1000){
-      peek_content <- httr::content(response, as = "text")
-      if(grepl("error", peek_content, ignore.case = TRUE) && grepl("504", peek_content)){
-        error_504 <- TRUE
-        #max_records <- max_records / 2
-      }
-      else {
-        error_504 <- FALSE
-      }
-    }
-    if (httr::status_code(response) == 200 && error_504 == FALSE) { # add check in body for 504
-      return(response)
-      #content(response, "text")  # Convert response to text for caching
-    }
-    else {
-      stop(paste("Error: Status code ", httr::status_code(response)," (but body may contain 504)"))
-    }
-  }
-
+  # If caching, memoise the fetch function, otherwise use as is
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
-
     # Memoise the function
-    fetch_data <- memoise::memoise(fetch_data, cache = cd)
+    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
+  }
+  else{
+    fetch_data <- policedatR::fetch_geometry_data
   }
 
   # Initialise
@@ -847,56 +680,14 @@ get_lsoa_geometries <- function(subset = NULL){
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
-  # Specify the request as a function so it can be memoised
-  # Note we need to do something with the status code so that non-200 responses
-  # don't get accepted and memoised. I've got a solution but not yet implemented
-  fetch_data <- function(base_url,
-                         where_clause,
-                         result_offset,
-                         max_records # GeoPortal max records in single response is 2000
-  ) {
-    params <- list(
-      where = where_clause,  # Retrieve all records
-      outFields =  "*", # "*" specifies all. I tried specifying fewer outfields but it doesn't speed things up. No need to specify geometry as this is assumed by default
-      outSR = "4326",
-      f = "geojson",
-      resultOffset = result_offset, # for pagination
-      resultRecordCount = max_records
-    )
-
-    # Initialise 504. Geoportal API saves 504 error to response content, so we
-    # have to look there for the error. But let's only look when it seems likely
-    # the request failed. we do this by using the length of the response - if it
-    # looks really short, it's probably failed, so take a look and see if indeed
-    # an error is reported
-    error_504 <- FALSE
-
-    response <- httr::GET(base_url, query = params)
-
-    if(length(response[["content"]]) < 1000){
-      peek_content <- httr::content(response, as = "text")
-      if(grepl("error", peek_content, ignore.case = TRUE) && grepl("504", peek_content)){
-        error_504 <- TRUE
-        #max_records <- max_records / 2
-      }
-      else {
-        error_504 <- FALSE
-      }
-    }
-    if (httr::status_code(response) == 200 && error_504 == FALSE) { # add check in body for 504
-      return(response)
-      #content(response, "text")  # Convert response to text for caching
-    }
-    else {
-      stop(paste("Error: Status code ", httr::status_code(response)," (but body may contain 504)"))
-    }
-  }
-
+  # If caching, memoise the fetch function, otherwise use as is
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
-
     # Memoise the function
-    fetch_data <- memoise::memoise(fetch_data, cache = cd)
+    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
+  }
+  else{
+    fetch_data <- policedatR::fetch_geometry_data
   }
 
   # Initialise
@@ -1070,56 +861,14 @@ get_oa_geometries <- function(subset = NULL){
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
-  # Specify the request as a function so it can be memoised
-  # Note we need to do something with the status code so that non-200 responses
-  # don't get accepted and memoised. I've got a solution but not yet implemented
-  fetch_data <- function(base_url,
-                         where_clause,
-                         result_offset,
-                         max_records # GeoPortal max records in single response is 2000
-  ) {
-    params <- list(
-      where = where_clause,  # Retrieve all records
-      outFields =  "*", # "*" specifies all. I tried specifying fewer outfields but it doesn't speed things up. No need to specify geometry as this is assumed by default
-      outSR = "4326",
-      f = "geojson",
-      resultOffset = result_offset, # for pagination
-      resultRecordCount = max_records
-    )
-
-    # Initialise 504. Geoportal API saves 504 error to response content, so we
-    # have to look there for the error. But let's only look when it seems likely
-    # the request failed. we do this by using the length of the response - if it
-    # looks really short, it's probably failed, so take a look and see if indeed
-    # an error is reported
-    error_504 <- FALSE
-
-    response <- httr::GET(base_url, query = params)
-
-    if(length(response[["content"]]) < 1000){
-      peek_content <- httr::content(response, as = "text")
-      if(grepl("error", peek_content, ignore.case = TRUE) && grepl("504", peek_content)){
-        error_504 <- TRUE
-        #max_records <- max_records / 2
-      }
-      else {
-        error_504 <- FALSE
-      }
-    }
-    if (httr::status_code(response) == 200 && error_504 == FALSE) { # add check in body for 504
-      return(response)
-      #content(response, "text")  # Convert response to text for caching
-    }
-    else {
-      stop(paste("Error: Status code ", httr::status_code(response)," (but body may contain 504)"))
-    }
-  }
-
+  # If caching, memoise the fetch function, otherwise use as is
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
-
     # Memoise the function
-    fetch_data <- memoise::memoise(fetch_data, cache = cd)
+    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
+  }
+  else{
+    fetch_data <- policedatR::fetch_geometry_data
   }
 
   # Initialise
