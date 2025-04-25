@@ -64,3 +64,77 @@ fetch_police_data <- function(body,
   }
   return(response)
 }
+
+
+
+#' Fetch geometry data
+#'
+#' Fetch geometry data workhorse for get_geometry functions. Submits GET requests to API
+#' at geoportal.statistics.gov.uk. Can be memoised (and is in the get_geometry functions) to speed up repeat calls.
+#'
+#' In practice the user does not need to directly call this function.
+#'
+#' @param base_url The API endpoint. String.
+#' @param where_clause Subset of areas for which to acquire geometries. String
+#' @param result_offset For pagination user can start acquisition from an offset record number.
+#' @param max_records For pagination user can acquire a specific number of records. Geoportal max is 2000 but
+#' sometimes it prefers smaller payloads.
+#'
+#' @returns An http response object
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Don't run as takes a while
+#' # Simplified example where the polygon is defined by only three points
+#' response <- fetch_geometry_data(
+#'   base_url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Regions_December_2022_Boundaries_EN_BFC_V2/FeatureServer/0/query",
+#'   where_clause = "1=1",
+#'   result_offset = 0,
+#'   max_records = 2000
+#'   )
+#' }
+
+fetch_geometry_data <- function(base_url,
+                                where_clause,
+                                result_offset = 0,
+                                max_records = 2000 # GeoPortal max records in single response is 2000
+                                ){
+  params <- list(
+    where = where_clause,  # Retrieve all records
+    outFields =  "*", # "*" specifies all. I tried specifying fewer outfields but it doesn't speed things up. No need to specify geometry as this is assumed by default
+    outSR = "4326",
+    f = "geojson",
+    resultOffset = result_offset, # for pagination
+    resultRecordCount = max_records
+  )
+
+  # Initialise 504. Geoportal API saves 504 error to response content, so we
+  # have to look there for the error. But let's only look when it seems likely
+  # the request failed. we do this by using the length of the response - if it
+  # looks really short, it's probably failed, so take a look and see if indeed
+  # an error is reported
+  error_504 <- FALSE
+
+  response <- httr::GET(base_url, query = params)
+
+  if(length(response[["content"]]) < 1000){
+    peek_content <- httr::content(response, as = "text")
+    if(grepl("error", peek_content, ignore.case = TRUE) && grepl("504", peek_content)){
+      error_504 <- TRUE
+      #max_records <- max_records / 2
+    }
+    else {
+      error_504 <- FALSE
+    }
+  }
+  if (httr::status_code(response) == 200 && error_504 == FALSE) { # add check in body for 504
+    return(response)
+    #content(response, "text")  # Convert response to text for caching
+  }
+  else {
+    stop(paste("Error: Status code ", httr::status_code(response)," (but body may contain 504)"))
+  }
+
+  return(response)
+}
