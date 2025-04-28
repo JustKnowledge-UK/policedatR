@@ -138,3 +138,57 @@ fetch_geometry_data <- function(base_url,
 
   return(response)
 }
+
+
+#' Fetch population estimates
+#'
+#' API workhorse for `get_population_estimates()`. Communicates with NOMIS API to
+#' get population estimates by ethnicity for local areas specified by the smallest
+#' level of geography in data (which must be column 1). Population estimates are
+#' from Census 2021 table TS021.
+#'
+#' Can be (and is in `get_population_estimates()`) memoised for quicker repeat
+#' requests.
+#'
+#' @param data
+#'
+#' @returns An S3 response object containing the response of the request.
+#'
+#' @examples
+#'
+#' # Mock df
+#' df <- data.frame("lad22cd" = c("E09000001","E09000002","E09000003"),
+#'                  "x" = seq(1:3))
+#'
+#' response <- fetch_population_estimates(df)
+#'
+fetch_population_estimates <- function(data){
+
+  # Endpoint
+  base <- "https://www.nomisweb.co.uk/api/v01/dataset/NM_2041_1.csv?"
+  date <- "date=latest"
+  # Type of measure (value/percent)
+  measures <- "measures=20100"
+  # Ethnicity variable - this asks for all disaggregated and aggregated
+  ethn <- "c2021_eth_20=0,1001,12,13,10,11,14,1002,16,15,17,1003,8,7,6,9,1004,1...5,1005,18,19"
+
+  # Get areas as defined in data
+  areas <- unique(data[,1])
+  geography <- paste0("geography=",paste(areas, collapse = ","))
+
+  # Build the query
+  query <- paste0(base, date,"&",geography,"&",ethn,"&",measures)
+
+  # get the response
+  response <- httr::GET(query)
+
+  if (httr::status_code(response) != 200) {
+    stop("Failed to fetch data from the API! (Non-200 status)")
+  }
+
+  return(response)
+
+}
+
+
+
