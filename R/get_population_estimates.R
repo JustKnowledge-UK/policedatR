@@ -26,14 +26,14 @@
 #' Get population estimates
 #'
 #' Acquire population estimates broken down by ethnicity for the unique areas
-#' in data via the NOMIS API. Uses an internal fetch function taht communicates
+#' in data via the NOMIS API. Uses an internal fetch function that communicates
 #' with the NOMIS API.
 #'
 #' @param data A data frame or tibble of data. This will usually be be an output
 #' of another policedatR function like get_data or analyse_data. The first column
 #' must be the geography variable for which population estimates are desired.
 #'
-#' @returns A long-format tibble with poplulation estimates for each ethnicity
+#' @returns A long-format tibble with population estimates for each ethnicity
 #' for each (lowest-level) geography in data.
 #'
 #' @export
@@ -64,7 +64,6 @@ get_population_estimates <- function(data){
 
   t1 <- Sys.time()
   response <- fetch_data(data)
-
   raw_data <- httr::content(response, as = "text", encoding = "UTF-8")
   pop_ests <- readr::read_csv(raw_data,
                               show_col_types = FALSE) # silences readr message
@@ -80,6 +79,42 @@ get_population_estimates <- function(data){
                   obs_value)
 
   colnames(pop_ests) <- c(area_code, "ethnicity_code", "ethnicity", "population")
+
+  # Simplify the ethnicity names
+  pop_ests <- pop_ests %>%
+    dplyr::mutate(
+      ethnicity = dplyr::case_when(
+        stringr::str_starts(ethnicity_code, "100") | ethnicity_code == 0 ~ # This is the aggregated categories
+          stringr::word(ethnicity) %>%
+            stringr::str_replace(.,",","") %>%
+            stringr::str_replace(.,":","") %>%
+            stringr::str_to_lower(),
+        !stringr::str_starts(ethnicity_code, "100") & ethnicity_code != 0 ~ # This is disaggregated
+          substr(ethnicity, stringr::str_locate(ethnicity, ":") + 2, nchar(ethnicity)) %>%
+            stringr::str_replace_all(",","") %>%
+            stringr::str_replace_all(" ","_") %>%
+            stringr::str_to_lower(),
+        TRUE ~ ethnicity)
+    )
+
+
+  # Merge 'gypsy or irish traveller' and 'roma' into 'other white' as per
+  # "Census 2021 Ethnic group classification 6a". Police data does not have
+  # the disaggregated categories
+  pop_ests_wider <- pop_ests %>%
+    tidyr::pivot_wider(id_cols = lad22cd, names_from = ethnicity, values_from = c(population)) %>%
+    dplyr::mutate(
+      other_white = other_white + gypsy_or_irish_traveller + roma
+    ) %>%
+    dplyr::select(-c(gypsy_or_irish_traveller, roma))
+
+  pop_ests2 <- pop_ests_wider %>%
+    tidyr::pivot_longer(cols = 2:ncol(.), names_to = "ethnicity", values_to = "population")
+
+  pop_ests <- pop_ests %>%
+    dplyr::select(-population) %>%
+    dplyr::right_join(pop_ests2, by = c("lad22cd","ethnicity"))
+
   t2 <- Sys.time()
   time_elapsed <- difftime(t2, t1, units = "secs")
   cat(paste0("\nRequest done in: ", round(time_elapsed, 3), " seconds"))
