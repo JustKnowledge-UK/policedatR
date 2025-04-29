@@ -1,6 +1,8 @@
 # v2 has mixed black categories factored into black
 
-analyse_records_3 <- function(data_file,
+
+
+analyse_records_3 <- function(data,
                             geography = c("la","region"),
                             ethnicity_definition = c("self","officer"),
                             collapse_ethnicity = TRUE,
@@ -16,51 +18,117 @@ analyse_records_3 <- function(data_file,
   # # add region for Wales
   # data$region[data$country == "Wales"] <- "Wales"
 
-  population_ests <- census21_population_by_ethnicity
+  create_ethnicity_names <- function(population_ests, collapse_ethnicity){
+    if(collapse_ethnicity){
+      # Get just the aggregated names - "Census 2021 Ethnic group classification 6a"
+      ethnicity_names <- population_ests %>%
+        dplyr::filter(stringr::str_starts(ethnicity_code, "100")) %>%
+        dplyr::distinct(ethnicity) %>%
+        dplyr::pull()
 
-  if(geography == "lsoa"){
-    population_ests <- population_ests %>%
-      group_by(lsoa21cd, lsoa21nm) %>%
-      summarise(across(where(is.numeric), sum, na.rm = TRUE)) %>%
-      mutate(
-        area = lsoa21cd
+      # Get the first word, remove commas, and make lower case
+      # ethnicity_names2 <- stringr::word(ethnicity_names) %>%
+      #   stringr::str_replace(.,",","") %>%
+      #   stringr::str_to_lower()
+
+      # Order the ethnicities alphabetically
+      ethnicity_names <- ethnicity_names[order(ethnicity_names)]
+    }
+    else{
+      # Get the disaggregated ethnicity codes - "Census 2021 Ethnic group classification 20b"
+      ethnicity_names <- population_ests %>%
+        dplyr::filter(!stringr::str_starts(ethnicity_code, "100") & ethnicity_code != 0) %>%
+        dplyr::distinct(ethnicity) %>%
+        dplyr::pull()
+
+      # Get the first word, remove commas, add underscores, and make lower case
+      # ethnicity_names2 <- substr(ethnicity_names, stringr::str_locate(ethnicity_names, ":") + 2, nchar(ethnicity_names)) %>%
+      #   stringr::str_replace_all(",","") %>%
+      #   stringr::str_replace_all(" ","_") %>%
+      #   stringr::str_to_lower()
+
+      # Add gypsy and roma into any other ethnic group
+
+
+      # Order the ethnicities alphabetically
+      ethnicity_names <- ethnicity_names[order(ethnicity_names)]
+
+    }
+    return(ethnicity_names)
+  }
+
+
+  population_ests <- policedatR::get_population_estimates(data)
+
+  # Tidy up the ethnicity names in population estimates for refactoring
+  ethnicity_names <- create_ethnicity_names(population_ests, collapse_ethnicity)
+
+
+  browser()
+  if(collapse_ethnicity==TRUE){
+    # Map out the ethnicities in police data into aggregated bins
+    ethnicity_map <- list(
+      c(
+        "Asian/Asian British - Any other Asian background",
+        "Asian/Asian British - Bangladeshi",
+        "Asian/Asian British - Chinese",
+        "Asian/Asian British - Indian",
+        "Asian/Asian British - Pakistani"),
+      c(
+        "Black/African/Caribbean/Black British - African",
+        "Black/African/Caribbean/Black British - Any other Black/African/Caribbean background",
+        "Black/African/Caribbean/Black British - Caribbean"),
+      c(
+        "Mixed/Multiple ethnic groups - Any other Mixed/Multiple ethnic background",
+        "Mixed/Multiple ethnic groups - White and Asian",
+        "Mixed/Multiple ethnic groups - White and Black African", # have included mixed in Black category
+        "Mixed/Multiple ethnic groups - White and Black Caribbean"),
+      c(
+        "Other ethnic group - Any other ethnic group",
+        "Other ethnic group - Arab",
+        "Other ethnic group - Not stated"),
+      c(
+        "White - Any other White background",
+        "White - English/Welsh/Scottish/Northern Irish/British",
+        "White - Irish")
+    )
+
+
+  }  else{
+    # Map out the ethnicities in police data into aggregated bins
+    # Order looks strange but it's matching the alphabetically ordered list
+    # of clean names from population estimates
+    ethnicity_map <- list(
+      "Black/African/Caribbean/Black British - African",
+      c("Other ethnic group - Any other ethnic group", "Other ethnic group - Not stated"), # Note: Consider if there's anything systematic in 'not stated'
+      "Other ethnic group - Arab",
+      "Asian/Asian British - Bangladeshi",
+      "Black/African/Caribbean/Black British - Caribbean",
+      "Asian/Asian British - Chinese",
+      "White - English/Welsh/Scottish/Northern Irish/British",
+      "Asian/Asian British - Indian",
+      "White - Irish",
+      "Asian/Asian British - Any other Asian background",
+      "Black/African/Caribbean/Black British - Any other Black/African/Caribbean background",
+      "Mixed/Multiple ethnic groups - Any other Mixed/Multiple ethnic background",
+      "White - Any other White background",
+      "Asian/Asian British - Pakistani",
+      "Mixed/Multiple ethnic groups - White and Asian",
+      "Mixed/Multiple ethnic groups - White and Black African",
+      "Mixed/Multiple ethnic groups - White and Black Caribbean"
       )
   }
-  else if (geography == "msoa"){
-    population_ests <- population_ests %>%
-      group_by(msoa21cd, msoa21nm) %>%
-      summarise(across(where(is.numeric), sum, na.rm = TRUE))%>%
-      mutate(
-        area = msoa21cd
-      )
-  } else if(geography == "lad"){
-    population_ests <- population_ests %>%
-      group_by(ladcd, ladnm) %>%
-      summarise(across(where(is.numeric), sum, na.rm = TRUE))%>%
-      mutate(
-        area = ladcd
-      )
-  } else{
-    population_ests <- population_ests %>%
-      mutate(
-        area = oa21cd
-      )
-  }
 
-  # load population estimates
-  # if(geography == "la"){
-  #   population_ests <- read.csv("./data/la_pop_estimates_2021_2.csv")
-  #   population_ests <- population_ests %>%
-  #     # translate ONS missing estimate characters to NAs
-  #     dplyr::mutate(across(ncol(population_ests)), dplyr::na_if(., "!")) %>%
-  #     dplyr::mutate(across(ncol(population_ests)), dplyr::na_if(., "-")) %>%
-  #     dplyr::mutate(across(ncol(population_ests)), dplyr::na_if(., "~"))
-  # }
-  # else if(geography == "region"){
-  #   population_ests <- read.csv("./data/census2011_pop_ests_by_ethn_region.csv")
-  #   population_ests$Region[which(population_ests$Region == "Yorkshire and The Humber")] <- "Yorkshire and the Humber"
-  #
-  # }
+  # Apply aggregated ethnicity names to the bins
+  ethnicity_map <- setNames(ethnicity_map, ethnicity_names)
+
+  # Recode self-defined ethnicity in police data using unquote-splice operator !!!
+  data$self_defined_ethnicity2 <- forcats::fct_collapse(
+    data$self_defined_ethnicity,
+    !!!ethnicity_map
+  )
+
+  browser()
 
   # set region of all Welsh LAs to 'Wales' and of Scottish LAs to 'Scotland'
   # data$region[which(data$country == "Wales")] <- "Wales"
@@ -234,7 +302,7 @@ analyse_records_3 <- function(data_file,
           ) %>%
           as.data.frame()
       } else if(length(unique(temp_df$ethnicity)) == 1){
-        # get the missing ethnicity if one is missing
+        # get the missing ethnicity if one is missing - why would tehre be a missing ehtnicity again? ah becuase tehre are no counts for it
         missing_ethnicity <- comparison[which(!(comparison %in% temp_df$ethnicity))]
         data_to_insert <- data.frame("ethnicity" = missing_ethnicity, "stopped" = 0)
 
@@ -256,6 +324,7 @@ analyse_records_3 <- function(data_file,
       # note here we need to also account for no ehtnicities
 
       #anotehr condition to run stats only if both ethnictiues are presnet
+      # this is the OR aprt
 
       if(length(unique(temp_df$ethnicity)) == 2){ # &
 
