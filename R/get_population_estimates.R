@@ -46,7 +46,7 @@
 #'
 #' population_estimates <- get_population_estimates(df)
 #'
-get_population_estimates <- function(data){
+get_population_estimates <- function(data, collapse_ethnicity){
 
   # Set up caching
   policedatR::caching_check()
@@ -80,40 +80,41 @@ get_population_estimates <- function(data){
 
   colnames(pop_ests) <- c(area_code, "ethnicity_code", "ethnicity", "population")
 
-  # Simplify the ethnicity names
-  pop_ests <- pop_ests %>%
-    dplyr::mutate(
-      ethnicity = dplyr::case_when(
-        stringr::str_starts(ethnicity_code, "100") | ethnicity_code == 0 ~ # This is the aggregated categories
-          stringr::word(ethnicity) %>%
+  # Filter based on whether we want aggregated or disaggregated,
+  # then simplify the ethnicity names
+  if(collapse_ethnicity){
+    pop_ests <- pop_ests %>%
+      dplyr::filter(stringr::str_starts(ethnicity_code, "100")) %>%
+      dplyr::mutate(
+        ethnicity = stringr::word(ethnicity) %>%
             stringr::str_replace(.,",","") %>%
             stringr::str_replace(.,":","") %>%
-            stringr::str_to_lower(),
-        !stringr::str_starts(ethnicity_code, "100") & ethnicity_code != 0 ~ # This is disaggregated
-          substr(ethnicity, stringr::str_locate(ethnicity, ":") + 2, nchar(ethnicity)) %>%
-            stringr::str_replace_all(",","") %>%
-            stringr::str_replace_all(" ","_") %>%
-            stringr::str_to_lower(),
-        TRUE ~ ethnicity)
-    )
+            stringr::str_to_lower()
+        ) %>%
+      dplyr::select(-ethnicity_code)
+  }
+  else{
+    pop_ests <- pop_ests %>%
+      dplyr::filter(!stringr::str_starts(ethnicity_code, "100") & ethnicity_code != 0) %>%
+      dplyr::mutate(
+        ethnicity = substr(ethnicity, stringr::str_locate(ethnicity, ":") + 2, nchar(ethnicity)) %>%
+              stringr::str_replace_all(",","") %>%
+              stringr::str_replace_all(" ","_") %>%
+              stringr::str_to_lower()
+      ) %>%
+      dplyr::select(-ethnicity_code)
+
+    # Merge 'roma' into 'other white' because police data uses 18+1
+    pop_ests <- pop_ests %>%
+      tidyr::pivot_wider(id_cols = !!rlang::sym(area_code), names_from = ethnicity, values_from = c(population)) %>%
+      dplyr::mutate(
+        other_white = other_white + roma
+      ) %>%
+      dplyr::select(-roma) %>%
+      tidyr::pivot_longer(cols = 2:ncol(.), names_to = "ethnicity", values_to = "population")
 
 
-  # Merge 'gypsy or irish traveller' and 'roma' into 'other white' as per
-  # "Census 2021 Ethnic group classification 6a". Police data does not have
-  # the disaggregated categories
-  pop_ests_wider <- pop_ests %>%
-    tidyr::pivot_wider(id_cols = lad22cd, names_from = ethnicity, values_from = c(population)) %>%
-    dplyr::mutate(
-      other_white = other_white + gypsy_or_irish_traveller + roma
-    ) %>%
-    dplyr::select(-c(gypsy_or_irish_traveller, roma))
-
-  pop_ests2 <- pop_ests_wider %>%
-    tidyr::pivot_longer(cols = 2:ncol(.), names_to = "ethnicity", values_to = "population")
-
-  pop_ests <- pop_ests %>%
-    dplyr::select(-population) %>%
-    dplyr::right_join(pop_ests2, by = c("lad22cd","ethnicity"))
+  }
 
   t2 <- Sys.time()
   time_elapsed <- difftime(t2, t1, units = "secs")
