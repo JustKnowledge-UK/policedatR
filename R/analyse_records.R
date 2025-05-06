@@ -7,16 +7,124 @@ analyse_records <- function(data,
                             ethnicity_definition = c("self","officer"),
                             collapse_ethnicity = TRUE,
                             comparison = c("white","black"),
-                            date = c("by_year", "by_month","12_month_periods")){
-  # load stop records
-  # check if data file is an object in environ or a csv
-  # data <- if(is.object(data_file)) data_file else read.csv(data_file)
-  # # subset to England & Wales
-  # data <- data %>%
-  #   subset(., country != "Northern Ireland" & country != "Scotland")
-  #
-  # # add region for Wales
-  # data$region[data$country == "Wales"] <- "Wales"
+                            period = 1){
+
+  #### Helper functions ####
+
+  # Specify a function that checks the input period is a factor of the total
+  # unique months in data and warns the user if not. Suggests factors for the
+  # total number of months, but user can still continue with desired period.
+  # Also checks that user does not enter a value for period greater than the
+  # total number of months in data.
+
+  # The function will return the revised value of period, or if period is already
+  # a factor, it will return the same value back.
+  period_is_factor <- function(period, length_dates){
+    if(period > length_dates){
+      stop(paste0("Period cannot be longer than the total number of months in data (",length_dates,"). Please choose a period less than or equal to the total number of months in data."))
+    }
+    else{
+      if(length_dates %% period != 0){
+        factors <- c()
+        for(i in 1:length_dates){
+          if(length_dates %% i == 0){
+            factors <- append(factors, i)
+          }
+        }
+        browser()
+        cat("\nWarning: Requested period is not a factor of the total number of months in data. Your last period will have fewer months.")
+        cat("\nThese periods are factors and might be better: ")
+        cat(factors)
+        repeat{
+          # browser()
+          check <- readline("Enter the period you would like to continue with: ")
+          check <- as.numeric(check)
+          if(check > length_dates){
+            cat("\nPlease choose a period less than or equal to the total number of months in data.")
+            cat("\nThese periods are factors and would be suitable: ")
+            cat(factors)
+          }
+          else{
+            cat(paste0("Continuing with ", check, "-month periods."))
+            break
+          }
+        }
+      }
+      else{
+        if(period == length_dates){
+          cat(paste0("\nAnalysing across all months in data (",period,") as one."))
+        }
+        check <- period
+      }
+
+    }
+
+    return(check)
+  }
+
+
+  # This function takes the ethnicity levels from population estimates which
+  # can then be used to remap the ethnicity levels in the police data. This
+  # facilitates joining the two in the analysis step.
+  create_ethnicity_names <- function(population_ests, ethnicity_definition){
+    # Get just the aggregated names - "Census 2021 Ethnic group classification 6a"
+    ethnicity_names <- population_ests %>%
+      dplyr::distinct(ethnicity) %>%
+      dplyr::pull()
+
+    # Order the ethnicities alphabetically
+    ethnicity_names <- ethnicity_names[order(ethnicity_names)]
+    if(ethnicity_definition == "self"){
+      # Add not stated category as this is not found in population estimates
+      # Only for self as 'not stated' doesn't exist for officer-defined
+      ethnicity_names <- c(ethnicity_names, "not_stated")
+    }
+
+    return(ethnicity_names)
+  }
+
+  #### Dates ####
+
+  # Prepare the dates for the period check
+  # separate date into separate columns
+  data$year <- as.numeric(substr(data$datetime, 1, 4))
+  data$month <- as.numeric(substr(data$datetime, 6, 7))
+  data$day <- as.numeric(substr(data$datetime, 9, 10))
+
+  # make year_month variable for indexing
+  data$year_month <-
+    as.Date(paste(
+      as.character(data$year),
+      as.character(data$month),"01", sep= "-"))
+
+  # Get a list of unique year_month combos and order them
+  date_set <- unique(data$year_month)
+  dates <- date_set[order(date_set)]
+
+  # Get the total number of unique months in data
+  length_dates <- length(dates)
+
+  # Run the period check
+  period <- period_is_factor(period, length_dates)
+
+
+  # Split the dates into time periods based on the number of months
+  # over which to summarise the data
+  date_unit <- split(dates, ceiling(seq_along(dates) / period))
+  # Name the elements of the list based on the oldest and newest month present in it
+  names(date_unit) <- lapply(date_unit, function(x) paste0(min(x),"_to_",max(x)))
+
+  # Create a lookup from the list above
+  lookup <- tibble::tibble(
+    year_month = as.Date(unlist(date_unit)),
+    date_unit = rep(names(date_unit), lengths(date_unit))
+  )
+
+  # Join the lookup to data
+  data <- data %>%
+    dplyr::left_join(lookup, by = "year_month")
+
+  #### Ethnicity ####
 
   # Force collapse ethnicity if ethnicity definition is 'officer' becuase
   # officer-defined ethnicity is only the 5 category ethnicity
@@ -24,30 +132,10 @@ analyse_records <- function(data,
     collapse_ethnicity <- TRUE
   }
 
-  create_ethnicity_names <- function(population_ests, ethnicity_definition){
-      # Get just the aggregated names - "Census 2021 Ethnic group classification 6a"
-      ethnicity_names <- population_ests %>%
-        dplyr::distinct(ethnicity) %>%
-        dplyr::pull()
-
-      # Order the ethnicities alphabetically
-      ethnicity_names <- ethnicity_names[order(ethnicity_names)]
-      if(ethnicity_definition == "self"){
-        # Add not stated category as this is not found in population estimates
-        # Only for self as 'not stated' doesn't exist for officer-defined
-        ethnicity_names <- c(ethnicity_names, "not_stated")
-      }
-
-    return(ethnicity_names)
-  }
-
-
   population_ests <- policedatR::get_population_estimates(data, collapse_ethnicity)
 
   # # Tidy up the ethnicity names in population estimates for refactoring
   ethnicity_names <- create_ethnicity_names(population_ests, ethnicity_definition)
-
-  browser()
 
   if(ethnicity_definition == "self"){
     # browser()
@@ -107,10 +195,10 @@ analyse_records <- function(data,
         "Other ethnic group - Not stated"
         )
     }
-    #
-    # # Apply aggregated ethnicity names to the bins
+
+    # Apply aggregated ethnicity names to the bins
     ethnicity_map <- setNames(ethnicity_map, ethnicity_names)
-    #
+
     # Recode self-defined ethnicity in police data using unquote-splice operator !!!
     data$self_defined_ethnicity <- forcats::fct_collapse(
       data$self_defined_ethnicity,
@@ -133,7 +221,7 @@ analyse_records <- function(data,
 
   area_variable <- colnames(data)[1] # Can add in the other area variables after
   summarised_data <- data %>%
-    dplyr::group_by(!!rlang::sym(area_variable), ethnicity) %>%
+    dplyr::group_by(!!rlang::sym(area_variable), ethnicity, date_unit) %>%
     dplyr::summarise(
       stopped = dplyr::n()
     ) %>%
@@ -160,6 +248,7 @@ analyse_records <- function(data,
     as.Date(paste(
       as.character(data_subset$year),
       as.character(data_subset$month),"01", sep= "-"))
+
 
   # if date by year, take sequence from min to max
   if(date == "by_year"){
