@@ -2,8 +2,8 @@
 
 
 
-analyse_records_3 <- function(data,
-                            geography = c("la","region"),
+analyse_records <- function(data,
+
                             ethnicity_definition = c("self","officer"),
                             collapse_ethnicity = TRUE,
                             comparison = c("white","black"),
@@ -18,150 +18,105 @@ analyse_records_3 <- function(data,
   # # add region for Wales
   # data$region[data$country == "Wales"] <- "Wales"
 
-  create_ethnicity_names <- function(population_ests, collapse_ethnicity){
-    if(collapse_ethnicity){
+  # Force collapse ethnicity if ethnicity definition is 'officer' becuase
+  # officer-defined ethnicity is only the 5 category ethnicity
+  if(ethnicity_definition == "officer"){
+    collapse_ethnicity <- TRUE
+  }
+
+  create_ethnicity_names <- function(population_ests, ethnicity_definition){
       # Get just the aggregated names - "Census 2021 Ethnic group classification 6a"
       ethnicity_names <- population_ests %>%
-        dplyr::filter(stringr::str_starts(ethnicity_code, "100")) %>%
         dplyr::distinct(ethnicity) %>%
         dplyr::pull()
 
-      # Get the first word, remove commas, and make lower case
-      # ethnicity_names2 <- stringr::word(ethnicity_names) %>%
-      #   stringr::str_replace(.,",","") %>%
-      #   stringr::str_to_lower()
-
       # Order the ethnicities alphabetically
       ethnicity_names <- ethnicity_names[order(ethnicity_names)]
-    }
-    else{
-      # Get the disaggregated ethnicity codes - "Census 2021 Ethnic group classification 20b"
-      ethnicity_names <- population_ests %>%
-        dplyr::filter(!stringr::str_starts(ethnicity_code, "100") & ethnicity_code != 0) %>%
-        dplyr::distinct(ethnicity) %>%
-        dplyr::pull()
+      if(ethnicity_definition == "self"){
+        # Add not stated category as this is not found in population estimates
+        # Only for self as 'not stated' doesn't exist for officer-defined
+        ethnicity_names <- c(ethnicity_names, "not_stated")
+      }
 
-      # Get the first word, remove commas, add underscores, and make lower case
-      # ethnicity_names2 <- substr(ethnicity_names, stringr::str_locate(ethnicity_names, ":") + 2, nchar(ethnicity_names)) %>%
-      #   stringr::str_replace_all(",","") %>%
-      #   stringr::str_replace_all(" ","_") %>%
-      #   stringr::str_to_lower()
-
-      # Add gypsy and roma into any other ethnic group
-
-
-      # Order the ethnicities alphabetically
-      ethnicity_names <- ethnicity_names[order(ethnicity_names)]
-
-    }
     return(ethnicity_names)
   }
 
 
-  population_ests <- policedatR::get_population_estimates(data)
+  population_ests <- policedatR::get_population_estimates(data, collapse_ethnicity)
 
-  # Tidy up the ethnicity names in population estimates for refactoring
-  ethnicity_names <- create_ethnicity_names(population_ests, collapse_ethnicity)
-
+  # # Tidy up the ethnicity names in population estimates for refactoring
+  ethnicity_names <- create_ethnicity_names(population_ests, ethnicity_definition)
 
   browser()
-  if(collapse_ethnicity==TRUE){
-    # Map out the ethnicities in police data into aggregated bins
-    ethnicity_map <- list(
-      c(
-        "Asian/Asian British - Any other Asian background",
-        "Asian/Asian British - Bangladeshi",
-        "Asian/Asian British - Chinese",
-        "Asian/Asian British - Indian",
-        "Asian/Asian British - Pakistani"),
-      c(
+
+  if(ethnicity_definition == "self"){
+    # browser()
+    if(collapse_ethnicity==TRUE){
+      # Map out the ethnicities in police data into aggregated bins
+      ethnicity_map <- list(
+        c(
+          "Asian/Asian British - Any other Asian background",
+          "Asian/Asian British - Bangladeshi",
+          "Asian/Asian British - Chinese",
+          "Asian/Asian British - Indian",
+          "Asian/Asian British - Pakistani"),
+        c(
+          "Black/African/Caribbean/Black British - African",
+          "Black/African/Caribbean/Black British - Any other Black/African/Caribbean background",
+          "Black/African/Caribbean/Black British - Caribbean"),
+        c(
+          "Mixed/Multiple ethnic groups - Any other Mixed/Multiple ethnic background",
+          "Mixed/Multiple ethnic groups - White and Asian",
+          "Mixed/Multiple ethnic groups - White and Black African", # have included mixed in Black category
+          "Mixed/Multiple ethnic groups - White and Black Caribbean"),
+        c(
+          "Other ethnic group - Any other ethnic group",
+          "Other ethnic group - Arab"),
+        c(
+          "White - Any other White background",
+          "White - English/Welsh/Scottish/Northern Irish/British",
+          "White - Irish",
+          "White - Gypsy or Irish Traveller"),
+        c("Other ethnic group - Not stated")
+      )
+
+
+    }  else{
+      # Map out the ethnicities in police data into aggregated bins
+      # Order looks strange but it's matching the alphabetically ordered list
+      # of clean names from population estimates
+      ethnicity_map <- list(
         "Black/African/Caribbean/Black British - African",
-        "Black/African/Caribbean/Black British - Any other Black/African/Caribbean background",
-        "Black/African/Caribbean/Black British - Caribbean"),
-      c(
-        "Mixed/Multiple ethnic groups - Any other Mixed/Multiple ethnic background",
-        "Mixed/Multiple ethnic groups - White and Asian",
-        "Mixed/Multiple ethnic groups - White and Black African", # have included mixed in Black category
-        "Mixed/Multiple ethnic groups - White and Black Caribbean"),
-      c(
         "Other ethnic group - Any other ethnic group",
         "Other ethnic group - Arab",
-        "Other ethnic group - Not stated"),
-      c(
-        "White - Any other White background",
+        "Asian/Asian British - Bangladeshi",
+        "Black/African/Caribbean/Black British - Caribbean",
+        "Asian/Asian British - Chinese",
         "White - English/Welsh/Scottish/Northern Irish/British",
-        "White - Irish")
+        "White - Gypsy or Irish Traveller",
+        "Asian/Asian British - Indian",
+        "White - Irish",
+        "Asian/Asian British - Any other Asian background",
+        "Black/African/Caribbean/Black British - Any other Black/African/Caribbean background",
+        "Mixed/Multiple ethnic groups - Any other Mixed/Multiple ethnic background",
+        "White - Any other White background",
+        "Asian/Asian British - Pakistani",
+        "Mixed/Multiple ethnic groups - White and Asian",
+        "Mixed/Multiple ethnic groups - White and Black African",
+        "Mixed/Multiple ethnic groups - White and Black Caribbean",
+        "Other ethnic group - Not stated"
+        )
+    }
+    #
+    # # Apply aggregated ethnicity names to the bins
+    ethnicity_map <- setNames(ethnicity_map, ethnicity_names)
+    #
+    # Recode self-defined ethnicity in police data using unquote-splice operator !!!
+    data$self_defined_ethnicity <- forcats::fct_collapse(
+      data$self_defined_ethnicity,
+      !!!ethnicity_map
     )
 
-
-  }  else{
-    # Map out the ethnicities in police data into aggregated bins
-    # Order looks strange but it's matching the alphabetically ordered list
-    # of clean names from population estimates
-    ethnicity_map <- list(
-      "Black/African/Caribbean/Black British - African",
-      c("Other ethnic group - Any other ethnic group", "Other ethnic group - Not stated"), # Note: Consider if there's anything systematic in 'not stated'
-      "Other ethnic group - Arab",
-      "Asian/Asian British - Bangladeshi",
-      "Black/African/Caribbean/Black British - Caribbean",
-      "Asian/Asian British - Chinese",
-      "White - English/Welsh/Scottish/Northern Irish/British",
-      "Asian/Asian British - Indian",
-      "White - Irish",
-      "Asian/Asian British - Any other Asian background",
-      "Black/African/Caribbean/Black British - Any other Black/African/Caribbean background",
-      "Mixed/Multiple ethnic groups - Any other Mixed/Multiple ethnic background",
-      "White - Any other White background",
-      "Asian/Asian British - Pakistani",
-      "Mixed/Multiple ethnic groups - White and Asian",
-      "Mixed/Multiple ethnic groups - White and Black African",
-      "Mixed/Multiple ethnic groups - White and Black Caribbean"
-      )
-  }
-
-  # Apply aggregated ethnicity names to the bins
-  ethnicity_map <- setNames(ethnicity_map, ethnicity_names)
-
-  # Recode self-defined ethnicity in police data using unquote-splice operator !!!
-  data$self_defined_ethnicity2 <- forcats::fct_collapse(
-    data$self_defined_ethnicity,
-    !!!ethnicity_map
-  )
-
-  browser()
-
-  # set region of all Welsh LAs to 'Wales' and of Scottish LAs to 'Scotland'
-  # data$region[which(data$country == "Wales")] <- "Wales"
-  #data$region[which(data$country == "Scotland")] <- "Scotland"
-
-  # collapse self-defined ethnicity (not necessary for officer-defined)
-  if(collapse_ethnicity == TRUE){
-    data$self_defined_ethnicity <- as.factor(data$self_defined_ethnicity)
-    data$self_defined_ethnicity <-
-      forcats::fct_collapse(data$self_defined_ethnicity,
-        # make these categories match the population estimates'
-        asian = c("Asian/Asian British - Any other Asian background",
-                  "Asian/Asian British - Bangladeshi",
-                  "Asian/Asian British - Chinese",
-                  "Asian/Asian British - Indian",
-                  "Asian/Asian British - Pakistani"),
-        black = c("Black/African/Caribbean/Black British - African",
-                  "Black/African/Caribbean/Black British - Any other Black/African/Caribbean background",
-                  "Black/African/Caribbean/Black British - Caribbean",
-                  "Mixed/Multiple ethnic groups - White and Black African", # have included mixed in Black category
-                  "Mixed/Multiple ethnic groups - White and Black Caribbean"),
-        multiple_ethnic_groups = c("Mixed/Multiple ethnic groups - Any other Mixed/Multiple ethnic background",
-                  "Mixed/Multiple ethnic groups - White and Asian"),
-        other_ethnic_group = c("Other ethnic group - Any other ethnic group",
-                               "Other ethnic group - Arab",
-                  "Other ethnic group - Not stated"),
-        white = c("White - Any other White background",
-                  "White - English/Welsh/Scottish/Northern Irish/British",
-                  "White - Irish")
-    )
-  }
-  # define ethnicity as either self-defined or officer-defined
-  if(ethnicity_definition == "self"){
     data <- data %>%
       dplyr::mutate(
         ethnicity = self_defined_ethnicity
@@ -170,9 +125,22 @@ analyse_records_3 <- function(data,
   else if(ethnicity_definition == "officer"){
     data <- data %>%
       dplyr::mutate(
-        ethnicity = officer_defined_ethnicity
+        ethnicity = stringr::str_to_lower(officer_defined_ethnicity)
       )
   }
+
+  browser()
+
+  area_variable <- colnames(data)[1] # Can add in the other area variables after
+  summarised_data <- data %>%
+    dplyr::group_by(!!rlang::sym(area_variable), ethnicity) %>%
+    dplyr::summarise(
+      stopped = dplyr::n()
+    ) %>%
+    dplyr::full_join(population_ests, by = c(area_variable, "ethnicity"))
+
+  browser()
+
 
   ethnicity_1 <- comparison[1]
   ethnicity_2 <- comparison[2]
