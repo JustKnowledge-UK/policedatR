@@ -93,7 +93,8 @@ get_population_estimates <- function(data, collapse_ethnicity){
       dplyr::group_by(pfa22cd, ethnicity_code, ethnicity) %>%
       dplyr::summarise(
         population = sum(population)
-      )
+      ) %>%
+      dplyr::ungroup()
 
 
   }
