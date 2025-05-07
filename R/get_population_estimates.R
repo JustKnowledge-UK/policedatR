@@ -78,7 +78,31 @@ get_population_estimates <- function(data, collapse_ethnicity){
                   c2021_eth_20_name,
                   obs_value)
 
-  colnames(pop_ests) <- c(area_code, "ethnicity_code", "ethnicity", "population")
+
+  # For PFAs we need to calculate population from constituent LADs.
+  if(area_code == "pfa22cd"){
+
+    colnames(pop_ests) <- c("lad22cd", "ethnicity_code", "ethnicity", "population")
+
+    lookup <- area_lookup %>%
+      dplyr::select(lad22cd, pfa22cd) %>%
+      dplyr::distinct()
+
+    pop_ests <- pop_ests %>%
+      dplyr::left_join(lookup, by = "lad22cd") %>%
+      dplyr::group_by(pfa22cd, ethnicity_code, ethnicity) %>%
+      dplyr::summarise(
+        population = sum(population)
+      )
+
+
+  }
+  else{
+    colnames(pop_ests) <- c(area_code, "ethnicity_code", "ethnicity", "population")
+  }
+
+
+
 
   # Filter based on whether we want aggregated or disaggregated,
   # then simplify the ethnicity names

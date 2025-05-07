@@ -173,7 +173,20 @@ fetch_population_estimates <- function(data){
   ethn <- "c2021_eth_20=0,1001,12,13,10,11,14,1002,16,15,17,1003,8,7,6,9,1004,1...5,1005,18,19"
 
   # Get areas as defined in data
-  areas <- unique(data[,1])
+  area_variable <- colnames(data)[1]
+  if(area_variable == "pfa22cd"){
+    pfas <- unique(data[,1])
+    areas <- area_lookup %>%
+      dplyr::select(lad22cd:pfa22nm) %>%
+      dplyr::distinct() %>%
+      dplyr::filter(!!rlang::sym(area_variable) %in% pfas) %>%
+      dplyr::pull(lad22cd)
+
+  }
+  else{
+    areas <- unique(data[,1])
+  }
+
   geography <- paste0("geography=",paste(areas, collapse = ","))
 
   # Build the query
