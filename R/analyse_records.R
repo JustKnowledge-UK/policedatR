@@ -86,14 +86,18 @@ analyse_records <- function(data,
   data$month <- as.numeric(substr(data$datetime, 6, 7))
   data$day <- as.numeric(substr(data$datetime, 9, 10))
 
-  # make year_month variable for indexing
-  data$year_month <-
-    as.Date(paste(
-      as.character(data$year),
-      as.character(data$month),"01", sep= "-"))
+  # make year_month variable for indexing - na problems here?
+  data <- data %>%
+    dplyr::mutate(
+      year_month = dplyr::if_else(!is.na(year),
+                          as.Date(paste(
+                            as.character(data$year),
+                            as.character(data$month),"01", sep= "-"), format = "%Y-%m-%d"), NA)
+    )
 
   # Get a list of unique year_month combos and order them
   date_set <- unique(data$year_month)
+  date_set <- date_set[!is.na(date_set)]
   dates <- date_set[order(date_set)]
 
   # Get the total number of unique months in data
@@ -102,10 +106,10 @@ analyse_records <- function(data,
   # Run the period check
   period <- period_is_factor(period, length_dates)
 
-
   # Split the dates into time periods based on the number of months
   # over which to summarise the data
   date_unit <- split(dates, ceiling(seq_along(dates) / period))
+
 
   # Name the elements of the list based on the oldest and newest month present in it
   names(date_unit) <- lapply(date_unit, function(x) if(period == 1) as.character(as.Date(min(x))) else paste0(min(x),"_to_",max(x)))
@@ -115,7 +119,6 @@ analyse_records <- function(data,
     year_month = as.Date(unlist(date_unit)),
     period = rep(names(date_unit), lengths(date_unit))
   )
-
 
   # Join the lookup to data
   data <- data %>%
