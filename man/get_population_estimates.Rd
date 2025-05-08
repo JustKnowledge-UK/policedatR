@@ -4,7 +4,7 @@
 \alias{get_population_estimates}
 \title{Get population estimates}
 \usage{
-get_population_estimates(data)
+get_population_estimates(data, collapse_ethnicity)
 }
 \arguments{
 \item{data}{A data frame or tibble of data. This will usually be be an output
@@ -12,12 +12,12 @@ of another policedatR function like get_data or analyse_data. The first column
 must be the geography variable for which population estimates are desired.}
 }
 \value{
-A long-format tibble with poplulation estimates for each ethnicity
+A long-format tibble with population estimates for each ethnicity
 for each (lowest-level) geography in data.
 }
 \description{
 Acquire population estimates broken down by ethnicity for the unique areas
-in data via the NOMIS API. Uses an internal fetch function taht communicates
+in data via the NOMIS API. Uses an internal fetch function that communicates
 with the NOMIS API.
 }
 \examples{
