@@ -1,9 +1,8 @@
 analyse_records <- function(data,
-
                             ethnicity_definition = c("self","officer"),
                             collapse_ethnicity = TRUE,
                             comparison = c("white","black"),
-                            period = 1){
+                            period = 12){
 
   #### Helper functions ####
 
@@ -283,10 +282,60 @@ analyse_records <- function(data,
     # Locate the area variables at the left of the dataframe
     dplyr::relocate(c(colnames(areas_above)[2]:rgn22nm), .after = area_variable)
 
+  if(!is.null(comparison)){
+    ethnicity_1 <- comparison[1]
+    ethnicity_2 <- comparison[2]
 
+    temp_df <- complete_data %>%
+      dplyr::filter(ethnicity %in% comparison)
+
+    browser()
+    # Step 2: Nest data by lad22cd and period
+    temp_df_nested <- temp_df %>%
+      dplyr::group_by(!!rlang::sym(area_variable), period) %>%
+      dplyr::filter(dplyr::n() == 2) %>%  # only keep complete pairs
+      tidyr::nest()
+
+
+    # Step 3: Define a function to compute odds ratio
+    # This takes each nested dataframe and computes the odds ratio for the
+    # ethnicities to be compared.
+    compute_odds_ratio <- function(data) {
+      # Create variables
+      data <- data %>%
+        dplyr::mutate(
+          not_stopped = population - stopped
+        )
+
+      # Build 2x2 matrix
+      mat <- matrix(c(data$stopped, data$not_stopped), nrow = 2, byrow = FALSE)
+
+      # Run fisher test or use oddsratio
+      res <- tryCatch({
+        fisher.test(mat)
+      }, error = function(e) {
+        message(e$message)
+        return(NULL)
+      })
+
+
+      tibble::tibble(
+        odds_ratio = if (!is.null(res)) res$estimate else NA,
+        ci_low = if(!is.null(res)) res$conf.int[1] else NA,
+        ci_upp = if(!is.null(res)) res$conf.int[2] else NA,
+        p_value = if (!is.null(res)) res$p.value else NA
+      )
+    }
+
+    results <- temp_df_nested %>%
+      # This applies the function in a vectorised way for each unique combination
+      # of area and period
+      dplyr::mutate(stats = purrr::map(data, compute_odds_ratio)) %>%
+      tidyr::unnest(stats)
+
+  }
 
   #### Old code starts here ####
-
   # ethnicity_1 <- comparison[1]
   # ethnicity_2 <- comparison[2]
   #
