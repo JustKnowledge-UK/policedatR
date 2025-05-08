@@ -287,53 +287,50 @@ analyse_records <- function(data,
     ethnicity_2 <- comparison[2]
 
     temp_df <- complete_data %>%
-      dplyr::filter(ethnicity %in% comparison)
-
-    browser()
-    # Step 2: Nest data by lad22cd and period
-    temp_df_nested <- temp_df %>%
-      dplyr::group_by(!!rlang::sym(area_variable), period) %>%
-      dplyr::filter(dplyr::n() == 2) %>%  # only keep complete pairs
-      tidyr::nest()
-
-
-    # Step 3: Define a function to compute odds ratio
-    # This takes each nested dataframe and computes the odds ratio for the
-    # ethnicities to be compared.
-    compute_odds_ratio <- function(data) {
-      # Create variables
-      data <- data %>%
-        dplyr::mutate(
-          not_stopped = population - stopped
-        )
-
-      # Build 2x2 matrix
-      mat <- matrix(c(data$stopped, data$not_stopped), nrow = 2, byrow = FALSE)
-
-      # Run fisher test or use oddsratio
-      res <- tryCatch({
-        fisher.test(mat)
-      }, error = function(e) {
-        message(e$message)
-        return(NULL)
-      })
-
-
-      tibble::tibble(
-        odds_ratio = if (!is.null(res)) res$estimate else NA,
-        ci_low = if(!is.null(res)) res$conf.int[1] else NA,
-        ci_upp = if(!is.null(res)) res$conf.int[2] else NA,
-        p_value = if (!is.null(res)) res$p.value else NA
+      dplyr::filter(ethnicity %in% comparison) %>%
+      dplyr::mutate(
+        ethnicity = factor(ethnicity, levels = comparison)
       )
+
+    # Define a function that runs a Poisson regression to get the IRR
+    compute_irr <- function(df) {
+      # Defensive: filter only 2 ethnicities
+      if (nrow(df) < 2 || length(unique(df$ethnicity)) < 2) return(tibble(irr = NA, conf.low = NA, conf.high = NA))
+
+      # Fit Poisson model: stopped ~ ethnicity + offset(log(population))
+      model <- glm(
+        stopped ~ ethnicity,
+        offset = log(population),
+        data = df,
+        family = poisson()
+      )
+
+      # Extract exponentiated coefficient (IRR for non-reference level)
+      broom::tidy(model, exponentiate = TRUE, conf.int = TRUE) %>%
+        dplyr::filter(term != "(Intercept)") %>%
+        dplyr::select(term, estimate, conf.low, conf.high, p.value) %>%
+        dplyr::rename(irr = estimate)
     }
 
-    results <- temp_df_nested %>%
-      # This applies the function in a vectorised way for each unique combination
-      # of area and period
-      dplyr::mutate(stats = purrr::map(data, compute_odds_ratio)) %>%
-      tidyr::unnest(stats)
+    # Apply the IRR computation within each lad22cd and period
+    irr_results <- temp_df %>%
+      dplyr::group_by(!!rlang::sym(area_variable), period) %>%
+      dplyr::filter(dplyr::n() == 2) %>%   # ensure two ethnicities per group
+      tidyr::nest() %>%
+      dplyr::mutate(irr_info =purrr::map(data, compute_irr)) %>%
+      tidyr::unnest(irr_info) %>%
+      dplyr::select(-data)
+
+
 
   }
+
+  browser()
+  # !! I think here i may need to do something with id cols for hte case where there
+  # are multiple dates
+  comparison_data <- temp_df %>%
+    tidyr::pivot_wider(names_from = ethnicity, values_from = c(stopped,population,stop_rate_per_1000)) %>%
+    dplyr::left_join(irr_results, by = c(area_variable,"period"))
 
   #### Old code starts here ####
   # ethnicity_1 <- comparison[1]
@@ -551,6 +548,12 @@ analyse_records <- function(data,
   # names(all_results) <- sub("^ethnicity_1", ethnicity_1, names(all_results))
   # names(all_results) <- sub("^ethnicity_2", ethnicity_2, names(all_results))
 
-  return(complete_data)
+  if(is.null(comparison)){
+    return(complete_data)
+  }
+  else{
+    return(comparison_data)
+  }
+
 
 }
