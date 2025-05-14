@@ -1,7 +1,49 @@
-analyse_records <- function(data,
+#' Count stops
+#'
+#' Count the number of stops for combinations of areas, time periods, and ethnicities.
+#' If `comparison` is NULL, returns a long tibble where each row is a unique
+#' area-period-ethnicity combination across all ethnicities. Computed statistics are
+#' count and rate per 1000 population. If `comparison` is not NULL, performs a
+#' generalised linear regression using Poisson distribution and log link function
+#' to produce an incidence rate ratio describing the extent of the different between
+#' the stop rates of the two ethnicities specified. In this case, it returns a wide tibble
+#' where each row is a unique area-period combination across only the ethnicities
+#' specified. Computed statistics are count, rate per 1000 population, incidence rate ratio,
+#' lower and upper confidence interval values, and p-value.
+#'
+#' @param data A data frame extracted using policedatR where each row is a unique
+#' stop and the first column is the area code variable for which stops were acquired
+#' (e.g. lad22cd for Local Authority Districts).
+#' @param ethnicity_definition String specifying which ethnicity definition to use
+#' for counts. 'self' has the possibility of using the 18 disaggregated categories but is likely
+#' to have more NAs than 'officer'. 'officer' is only the 5 aggregated ethnicity categories and
+#' will likely have fewer NAs (technically it should have 0 but in practice this isn't the case)
+#' @param collapse_ethnicity If `ethnicity_definition == 'self'`, this controls
+#' whether to use the 18 disaggregated categories or to aggregate to the 5 broader
+#' categories. If `ethnicity_definition == 'self'`, `collapse_ethnicity` is always TRUE.
+#' @param comparison User can optionally choose to compare between two ethnicities. This is
+#' a character vector with length 2, where the first element is the baseline against which the
+#' second element is compared. If this is specified, counts, rates, and incidence rate ratios will
+#' be returned for only the two ethnicities specified.
+#' @param period Numeric value specifying the number of months each time period
+#' should be.
+#'
+#' @returns If `comparison` is NULL, a long tibble where each row is a unique
+#' area-period-ethnicity combination across all ethnicities. Computed statistics are
+#' count and rate per 1000 population.
+#'
+#' If `comparison` is specified, a wide tibble where each row is a unique
+#' area-period combination across only the ethnicities specified. Computed statistics are
+#' count, rate per 1000 population, incidence rate ratio, lower and upper confidence
+#' interval, and p-value.
+#'
+#' @export
+#'
+#' @examples
+count_stops <- function(data,
                             ethnicity_definition = c("self","officer"),
                             collapse_ethnicity = TRUE,
-                            comparison = c("white","black"),
+                            comparison = NULL,
                             period = 12){
 
   #### Helper functions ####
@@ -282,6 +324,7 @@ analyse_records <- function(data,
     # Locate the area variables at the left of the dataframe
     dplyr::relocate(c(colnames(areas_above)[2]:rgn22nm), .after = area_variable)
 
+  # browser()
   if(!is.null(comparison)){
     ethnicity_1 <- comparison[1]
     ethnicity_2 <- comparison[2]
@@ -295,7 +338,7 @@ analyse_records <- function(data,
     # Define a function that runs a Poisson regression to get the IRR
     compute_irr <- function(df) {
       # Defensive: filter only 2 ethnicities
-      if (nrow(df) < 2 || length(unique(df$ethnicity)) < 2) return(tibble(irr = NA, conf.low = NA, conf.high = NA))
+      if (nrow(df) < 2 || length(unique(df$ethnicity)) < 2 || sum(df$stopped) == 0) return(tibble::tibble(irr = NA, conf.low = NA, conf.high = NA))
 
       # Fit Poisson model: stopped ~ ethnicity + offset(log(population))
       model <- glm(
@@ -305,14 +348,16 @@ analyse_records <- function(data,
         family = poisson()
       )
 
+      browser()
       # Extract exponentiated coefficient (IRR for non-reference level)
       broom::tidy(model, exponentiate = TRUE, conf.int = TRUE) %>%
         dplyr::filter(term != "(Intercept)") %>%
         dplyr::select(term, estimate, conf.low, conf.high, p.value) %>%
         dplyr::rename(irr = estimate)
+      browser()
     }
 
-    # Apply the IRR computation within each lad22cd and period
+    # Apply the IRR computation within each area and period
     irr_results <- temp_df %>%
       dplyr::group_by(!!rlang::sym(area_variable), period) %>%
       dplyr::filter(dplyr::n() == 2) %>%   # ensure two ethnicities per group
@@ -325,7 +370,7 @@ analyse_records <- function(data,
 
   }
 
-  browser()
+  # browser()
   # !! I think here i may need to do something with id cols for hte case where there
   # are multiple dates
   comparison_data <- temp_df %>%
