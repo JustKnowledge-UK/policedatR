@@ -55,10 +55,10 @@
 #'                              comparison = c("white","black")
 
 count_stops <- function(data,
-                            ethnicity_definition = c("self","officer"),
-                            collapse_ethnicity = TRUE,
-                            comparison = NULL,
-                            period = 12){
+                        ethnicity_definition = c("self","officer"),
+                        collapse_ethnicity = TRUE,
+                        comparison = NULL,
+                        period = 12){
 
   #### Helper functions ####
 
@@ -117,7 +117,6 @@ count_stops <- function(data,
   # can then be used to remap the ethnicity levels in the police data. This
   # facilitates joining the two in the analysis step.
   create_ethnicity_names <- function(population_ests, ethnicity_definition){
-    # Get just the aggregated names - "Census 2021 Ethnic group classification 6a"
     ethnicity_names <- population_ests %>%
       dplyr::distinct(ethnicity) %>%
       dplyr::pull()
@@ -300,19 +299,22 @@ count_stops <- function(data,
     # Rename the "area" column to the correct variable name
   colnames(all_combinations)[1] <- area_variable
 
+
   # Count the stops
   summarised_data <- data %>%
-    dplyr::group_by(!!rlang::sym(area_variable), ethnicity, period) %>%
+    dplyr::group_by(!!rlang::sym(area_variable),period, ethnicity) %>%
     dplyr::summarise(
       stopped = dplyr::n(),
     ) %>%
     dplyr::ungroup()
 
+  browser()
+
 
   # Join counts with expanded grid. This will create NAs where no data in stops
   # to then be converted to 0s. Then add in pop ests and calculate rates per 1k
   complete_data <- all_combinations %>%
-    dplyr::left_join(summarised_data, by = c(area_variable, "ethnicity","period")) %>%
+    dplyr::left_join(summarised_data, by = c(area_variable,"period", "ethnicity")) %>%
     dplyr::mutate(
       stopped = ifelse(is.na(stopped), 0, stopped)
     ) %>%
@@ -339,6 +341,7 @@ count_stops <- function(data,
     dplyr::relocate(c(colnames(areas_above)[2]:rgn22nm), .after = area_variable)
 
   # browser()
+  #### Comparing two ethnicities ####
   if(!is.null(comparison)){
     ethnicity_1 <- comparison[1]
     ethnicity_2 <- comparison[2]
@@ -362,13 +365,13 @@ count_stops <- function(data,
         family = poisson()
       )
 
-      browser()
+      # browser()
       # Extract exponentiated coefficient (IRR for non-reference level)
       broom::tidy(model, exponentiate = TRUE, conf.int = TRUE) %>%
         dplyr::filter(term != "(Intercept)") %>%
         dplyr::select(term, estimate, conf.low, conf.high, p.value) %>%
         dplyr::rename(irr = estimate)
-      browser()
+      # browser()
     }
 
     # Apply the IRR computation within each area and period
@@ -380,18 +383,19 @@ count_stops <- function(data,
       tidyr::unnest(irr_info) %>%
       dplyr::select(-data)
 
-
+    # browser()
+    # !! I think here i may need to do something with id cols for hte case where there
+    # are multiple dates
+    comparison_data <- temp_df %>%
+      tidyr::pivot_wider(names_from = ethnicity, values_from = c(stopped,population,stop_rate_per_1000)) %>%
+      dplyr::left_join(irr_results, by = c(area_variable,"period"))
 
   }
 
-  # browser()
-  # !! I think here i may need to do something with id cols for hte case where there
-  # are multiple dates
-  comparison_data <- temp_df %>%
-    tidyr::pivot_wider(names_from = ethnicity, values_from = c(stopped,population,stop_rate_per_1000)) %>%
-    dplyr::left_join(irr_results, by = c(area_variable,"period"))
+
 
   #### Old code starts here ####
+
   # ethnicity_1 <- comparison[1]
   # ethnicity_2 <- comparison[2]
   #
@@ -617,4 +621,145 @@ count_stops <- function(data,
 
 }
 
+
+#' Analyse anything (provisional name)
+#'
+#' Calculate counts and percentages of stops based on a combination of grouping
+#' variables. `analysis_variables` defines an ordered set of grouping variables
+#' for which counts will be produced. For example, `analysis_variables = c("area","period","object")"`
+#' will count the number of stops for each object of search within each area and
+#' time period. The percentage denominator is the sum of counts within the final
+#' grouping level. In the example above, the denominator would be the total number
+#' of stops within each area-period combination. The options for defining `analysis_variables`
+#' can be found using `show_analysis_variables()`.
+#'
+#' @param data A tibble of stop data acquired using policedatR
+#' @param analysis_variables A character vector of variables to be used
+#' as grouping variables when counting. Order is important. Variables are nested
+#' from left to right; the first element is the highest grouping level and the
+#' final element is the lowest grouping level. Percentage denominators are the
+#' sum of counts within the final grouping level. Valid values are: area, ethnicity,
+#' period, object, outcome, age, gender, legislation. Use `show_analysis_variables()`
+#' to see these values and brief explanation of to what they refer. See details for more info.
+#' @param ethnicity_definition If ethnicity is included, what definition to use.
+#' `'self'` for self-defined, `'officer'` for officer-defined.
+#' @param collapse_ethnicity If ethnicity is included, should it be aggregated (TRUE)
+#' or not (FALSE)? If `ethnicity_definition == 'officer'`, forced to TRUE.
+#' @param period The number of months to use as a time period, e.g. 6 = 6-month-periods;
+#' 1 = monthly periods.
+#'
+#' @returns A tibble containing counts and percentages of stops based on the grouping
+#' described by `analysis_variables`.
+#' @export
+#'
+#' @examples
+#'
+#' # Count the number of stops for each object of search within each area and
+#' # time period
+#' analyse_anything(data, analysis_variables = c("area","period","object")
+analyse_anything <- function(data,
+                             analysis_variables,
+                             ethnicity_definition,
+                             collapse_ethnicity,
+                             period){
+
+  #### Helpers ####
+
+  # This function takes input from user and maps it to variables in data and
+  # then creates a data frame with every combination of the values in these
+  # variables. This allows us to include combinations that have count values of
+  # 0 which would otherwise be omitted by dplyr::n().
+  initialise_grid <- function(data, analysis_variables){
+    # Get area variable code from first column
+    area_variable <- colnames(data)[1]
+
+    # Create a mapping between the input arguments and the data variables
+    groups_map <- list(
+      "area" = area_variable,
+      "ethnicity" = "ethnicity",
+      "period" = "period",
+      "object" = "object_of_search",
+      "outcome" = "outcome",
+      "age" = "age_range",
+      "gender" = "gender",
+      "legislation" = "legislation"
+    )
+
+    # Get an unnamed character vector of the actual variable names using
+    # the mapping to translate user inputs into variables
+    analysis_variables2 <- unname(unlist(groups_map[analysis_variables]))
+
+    # Use the character vector to get unique values of each variable in a name
+    # list
+    values <- setNames(
+      lapply(analysis_variables2, function(x) unique(data[[x]])),
+      analysis_variables2
+    )
+
+    # Use the list to create a data frame where all combinations of the input
+    # variables are present
+    all_combinations <- do.call(expand.grid, c(values, stringsAsFactors = FALSE))
+
+    # We also want to return the converted variables for indexing (there may
+    # be a more elegant refactoring possible here)
+    return(list(
+      analysis_variables2 = analysis_variables2,
+      all_combinations = all_combinations)
+    )
+  }
+
+
+  # Process ethnicity. This creates nice names based on population estimates
+  # and handles aggregation and types of definition.
+  # Only do this if ethnicity is asked for.
+  if("ethnicity" %in% analysis_variables){
+    # Force collapse for officer-defined.
+    if(ethnicity_definition == "officer"){
+      collapse_ethnicity <- TRUE
+    }
+    data <- process_ethnicity(data,
+                              collapse_ethnicity = collapse_ethnicity,
+                              ethnicity_definition = ethnicity_definition)
+  }
+
+  if("period" %in% analysis_variables){
+    # Create a period variable based on the value of period
+    # Only if period is asked for
+    data <- create_periods(data, period)
+  }
+
+  # Initialise a data frame containing all combinations of the analysis variables
+  # This allows us to include combinations for which the count is 0 (as these are
+  # omitted by n()) by left_joining later
+  result <- initialise_grid(data, analysis_variables)
+  all_combinations <- result$all_combinations
+  analysis_variables2 <- result$analysis_variables2
+
+  # Count the stops
+  summarised_data <- data %>%
+    dplyr::group_by(!!!rlang::syms(analysis_variables2)) %>%
+    dplyr::summarise(
+      n = dplyr::n(),
+    ) %>%
+    dplyr::mutate(
+      percentage = 100 * (n / sum(n))
+    ) %>%
+    dplyr::ungroup()
+
+
+  # Join counts with expanded grid. This will create NAs where no data in stops
+  # to then be converted to 0s.
+  complete_data <- all_combinations %>%
+    dplyr::left_join(summarised_data, by = analysis_variables2) %>%
+    dplyr::mutate(
+      # Make NAs for n and percentage 0 - this is safe as NAs are a result of the left_join which
+      # flags the combinations that weren't counted in the summarise step because
+      # they didn't exist
+      across(c(n, percentage), ~ ifelse(is.na(.), 0, .))
+    ) %>%
+    # Make order the same as grouping - this was lost in the left_join above
+    dplyr::arrange(!!!rlang::syms(analysis_variables2[-length(analysis_variables2)]))
+
+  return(complete_data)
+}
 
