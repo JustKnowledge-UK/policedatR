@@ -40,6 +40,20 @@
 #' @export
 #'
 #' @examples
+#'
+#' # Count by self-defined ethnicity in one-month periods
+#' counted_data <- count_stops(data,
+#'                             ethnicity_definition = "self",
+#'                             period = 1
+#'                            )
+
+#' # Count by officer-defined ethnicity and calculate the disparity in stop rates
+#' between White and Black people, in one-month periods.
+#' counted_data2 <- count_stops(data,
+#'                              ethnicity_definition = "officer",
+#'                              period = 1,
+#'                              comparison = c("white","black")
+
 count_stops <- function(data,
                             ethnicity_definition = c("self","officer"),
                             collapse_ethnicity = TRUE,
@@ -602,3 +616,5 @@ count_stops <- function(data,
 
 
 }
+
+
