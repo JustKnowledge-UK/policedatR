@@ -308,8 +308,6 @@ count_stops <- function(data,
     ) %>%
     dplyr::ungroup()
 
-  browser()
-
 
   # Join counts with expanded grid. This will create NAs where no data in stops
   # to then be converted to 0s. Then add in pop ests and calculate rates per 1k
@@ -352,6 +350,7 @@ count_stops <- function(data,
         ethnicity = factor(ethnicity, levels = comparison)
       )
 
+
     # Define a function that runs a Poisson regression to get the IRR
     compute_irr <- function(df) {
       # Defensive: filter only 2 ethnicities
@@ -365,7 +364,7 @@ count_stops <- function(data,
         family = poisson()
       )
 
-      # browser()
+
       # Extract exponentiated coefficient (IRR for non-reference level)
       broom::tidy(model, exponentiate = TRUE, conf.int = TRUE) %>%
         dplyr::filter(term != "(Intercept)") %>%
@@ -722,9 +721,9 @@ analyse_anything <- function(data,
                               ethnicity_definition = ethnicity_definition)
   }
 
+  # Create a period variable based on the value of period
+  # Only if period is asked for
   if("period" %in% analysis_variables){
-    # Create a period variable based on the value of period
-    # Only if period is asked for
     data <- create_periods(data, period)
   }
 
@@ -734,6 +733,8 @@ analyse_anything <- function(data,
   result <- initialise_grid(data, analysis_variables)
   all_combinations <- result$all_combinations
   analysis_variables2 <- result$analysis_variables2
+
+  #### Analysis ####
 
   # Count the stops
   summarised_data <- data %>%
@@ -745,6 +746,7 @@ analyse_anything <- function(data,
       percentage = 100 * (n / sum(n))
     ) %>%
     dplyr::ungroup()
+
 
 
   # Join counts with expanded grid. This will create NAs where no data in stops
@@ -762,4 +764,123 @@ analyse_anything <- function(data,
 
   return(complete_data)
 }
+
+#' Calculate risk ratio
+#'
+#' Calculate risk ratio between the stop rates of two different ethnicities. Runs
+#' policedatR::analyse_anything() with the grouping `(area, period, ethnicity)` to
+#' produce counts for each area-period-ethnicity combination, then runs`epitools::riskratio()`
+#' on the output to calculate the risk ratioand confidence interval of stop rates of specified
+#' ethnicities for each area and period.
+#' @param df A tibble of stop data acquired using policedatR. The first column
+#' must be the area code variable of the geography of interest (e.g. 'lad22cd').
+#' @param ethnicity_definition String specifying which ethnicity definition to use
+#' for counts. 'self' has the possibility of using the 18 disaggregated categories but is likely
+#' to have more NAs than 'officer'. 'officer' is only the 5 aggregated ethnicity categories and
+#' will likely have fewer NAs (technically it should have 0 but in practice this isn't the case)
+#' @param collapse_ethnicity If `ethnicity_definition == 'self'`, this controls
+#' whether to use the 18 disaggregated categories or to aggregate to the 5 broader
+#' categories. If `ethnicity_definition == 'self'`, `collapse_ethnicity` is always TRUE.
+#' @param comparison A character vector with length 2, where the first element is
+#' the reference level of ethnicity against which the second ('test') level is compared.
+#' If NULL, user will be prompted to pick the reference and test ethnicities.
+#' @param period Numeric value specifying the number of months each time period
+#' should be.
+#'
+#' @returns A tibble with number of stops and stop rate per 1000 population for each
+#' ethnicity, and risk ratio and confidence interval within each area-period combination.
+#' @export
+#'
+#' @examples
+#'
+#' # Get data for Haringey and Lambeth
+#' data <- policedatR::get_lad_data(list = c("Haringey","Lambeth"))
+#'
+#' # Calculate risk ratio between Black and White people (White is reference).
+#' summarised_data <- calculate_riskratio(
+#'                                      data,
+#'                                      ethnicity_definition = "self",
+#'                                      collapse_ethnicity = T,
+#'                                      comparison = c("white","black"),
+#'                                      period = 12)
+
+calculate_riskratio <- function(df,
+                                ethnicity_definition = "self",
+                                collapse_ethnicity = T,
+                                comparison = c("white","black"),
+                                period = 12){
+
+  area_variable <- colnames(df)[1]
+  all_area_variables <- colnames(df)[1:which(colnames(df) == "rgn22nm")]
+  remaining_area_variables <- colnames(df)[2:which(colnames(df) == "rgn22nm")]
+
+  population_ests <- policedatR::get_population_estimates(df, collapse_ethnicity)
+
+  # Get the count data
+  summarised_data <- policedatR::analyse_anything(data, c("area","period","ethnicity"),
+                                                  ethnicity_definition = ethnicity_definition,
+                                                  collapse_ethnicity = collapse_ethnicity,
+                                                  period = period) %>%
+    dplyr::full_join(population_ests, by = c(area_variable, "ethnicity")) %>%
+    dplyr::rename(
+      stopped = n
+    ) %>%
+    dplyr::mutate(
+      not_stopped = population - stopped,
+      stop_rate_per_1000 = 1000 * (stopped / population)
+    )
+
+  # If comparison isn't specified, help user choose by listing categories
+  # Note management needed here to ensure correct inputs.
+  if(is.null(comparison)){
+    ethnicities <- unique(levels(summarised_data$ethnicity))
+
+    cat("\nEthnicities detected in data:\n")
+    cat(paste(seq_along(ethnicities), ethnicities, sep = ". "), sep = "\n")
+    ethn1 <- as.numeric(readline("Please select the number of the reference ethnicity: "))
+    ethn2 <- as.numeric(readline("Please select the number of the test ethnicity: "))
+
+    comparison <- ethnicities[c(ethn1, ethn2)]
+    cat(paste0("\nComparing ", comparison[2], " stop rate to ", comparison[1], " stop rate..."))
+  }
+
+  ethnicity_1 <- comparison[1]
+  ethnicity_2 <- comparison[2]
+
+  # Subset to ethnicities of interest
+  temp_df <- summarised_data %>%
+    dplyr::filter(ethnicity %in% comparison) %>%
+    dplyr::mutate(
+      ethnicity = factor(ethnicity, levels = comparison)
+    )
+
+  # Run the risk ratio
+  rr_results <- temp_df %>%
+    dplyr::group_by(!!rlang::sym(area_variable), period) %>%
+    dplyr::filter(dplyr::n_distinct(ethnicity) == 2) %>%   # ensure two unique ethnicities per group
+    dplyr::select(!!rlang::sym(area_variable), period, ethnicity, not_stopped, stopped) %>%
+    tidyr::nest() %>%
+    dplyr::mutate(rr_info = purrr::map(data, riskratio_from_df)) %>%
+    tidyr::unnest(rr_info) %>%
+    dplyr::select(-data)
+
+  # Widen original data and join rr to it
+  complete_data <- temp_df %>%
+    tidyr::pivot_wider(id_cols = c(!!rlang::sym(area_variable), period), names_from = ethnicity, values_from = c(stopped,population,stop_rate_per_1000)) %>%
+    dplyr::left_join(rr_results, by = c(area_variable,"period"))
+
+  # Add in the other area variables
+  all_areas <- area_lookup %>%
+    dplyr::select(all_of(all_area_variables)) %>%
+    dplyr::distinct()
+
+  # Join area variables to data and locate them sensibly
+  complete_data <- complete_data %>%
+    dplyr::left_join(all_areas, by = area_variable) %>%
+    # Locate the area variables at the left of the dataframe
+    dplyr::relocate(all_of(remaining_area_variables), .after = area_variable)
+
+  return(complete_data)
+
+  }
 
