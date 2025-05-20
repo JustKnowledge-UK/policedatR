@@ -44,7 +44,7 @@
 #' # Get the most recent 12 months of data for all Regions.
 #' # Don't run as will take a while.
 #' df <- get_region_data()
-#' }
+#'
 #'
 #' # Get data for a subset of Regions, only the most recent month
 #' df2 <- get_region_data(subset = list("rgn22nm" = "London"), num_months_backwards = 1)
@@ -53,7 +53,7 @@
 #' # Get data for the Region to which Haringey belongs (i.e. London). This
 #' # will give identical result to example 2 above.
 #' df3 <- get_region_data(subset = list("lad22nm" = c("Haringey")), num_months_backwards = 1)
-#'
+#'}
 #'
 get_region_data <- function(subset = NULL,
                          num_months_backwards = 12,
@@ -456,7 +456,7 @@ get_region_data <- function(subset = NULL,
 #' # Get the most recent 12 months of data for all PFAs.
 #' # Don't run as will take a while
 #' df <- get_pfa_data()
-#' }
+#'
 #'
 #' # Get data for a subset of PFAs, only the most recent month.
 #' df2 <- get_pfa_data(subset = list("pfa22nm" = "Metropolitan Police"), num_months_backwards = 1)
@@ -464,7 +464,7 @@ get_region_data <- function(subset = NULL,
 #' # Get data for the PFA to which Haringey belongs (i.e. Metropolitan Police). This
 #' # will give identical result to example 2 above.
 #' df3 <- get_pfa_data(subset = list("lad22nm" = c("Haringey")), num_months_backwards = 1)
-#'
+#' }
 #'
 get_pfa_data <- function(subset = NULL,
                          num_months_backwards = 12,
@@ -872,7 +872,7 @@ get_pfa_data <- function(subset = NULL,
 #' # Don't run as will take a while.
 #' df <- get_lad_data()
 #' }
-#' # Get data for a subset of LADs, only the last 6 months
+#' # Get data for a subset of LADs, only the most recent month
 #' df2 <- get_lad_data(subset = list(
 #'                       "lad22nm" = c('Haringey','Waltham Forest')),
 #'                       num_months_backwards = 1)
