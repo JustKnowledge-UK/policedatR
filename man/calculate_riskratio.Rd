@@ -43,16 +43,3 @@ produce counts for each area-period-ethnicity combination, then runs\code{epitoo
 on the output to calculate the risk ratioand confidence interval of stop rates of specified
 ethnicities for each area and period.
 }
-\examples{
-
-# Get data for Haringey and Lambeth
-data <- policedatR::get_lad_data(list = c("Haringey","Lambeth"))
-
-# Calculate risk ratio between Black and White people (White is reference).
-summarised_data <- calculate_riskratio(
-                                     data,
-                                     ethnicity_definition = "self",
-                                     collapse_ethnicity = T,
-                                     comparison = c("white","black"),
-                                     period = 12)
-}

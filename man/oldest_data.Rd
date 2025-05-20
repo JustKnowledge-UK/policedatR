@@ -4,7 +4,7 @@
 \alias{oldest_data}
 \title{Retrieve oldest date for which data in API are available}
 \usage{
-oldest_data()
+oldest_data(timeout = 10)
 }
 \value{
 A string describing date in yyyy-mm format

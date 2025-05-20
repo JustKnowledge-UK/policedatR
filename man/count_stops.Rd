@@ -56,17 +56,3 @@ where each row is a unique area-period combination across only the ethnicities
 specified. Computed statistics are count, rate per 1000 population, incidence rate ratio,
 lower and upper confidence interval values, and p-value.
 }
-\examples{
-
-# Count by self-defined ethnicity in one-month periods
-counted_data <- count_stops(data,
-                            ethnicity_definition = "self",
-                            period = 1
-                           )
-# Count by officer-defined ethnicity and calculate the disparity in stop rates
-between White and Black people, in one-month periods.
-counted_data2 <- count_stops(data,
-                             ethnicity_definition = "officer",
-                             period = 1,
-                             comparison = c("white","black")
-}

@@ -9,7 +9,7 @@ analyse_anything(
   analysis_variables,
   ethnicity_definition,
   collapse_ethnicity,
-  period
+  period = 12
 )
 }
 \arguments{
@@ -45,10 +45,4 @@ time period. The percentage denominator is the sum of counts within the final
 grouping level. In the example above, the denominator would be the total number
 of stops within each area-period combination. The options for defining \code{analysis_variables}
 can be found using \code{show_analysis_variables()}.
-}
-\examples{
-
-# Count the number of stops for each object of search within each area and
-# time period
-analyse_anything(data, analysis_variables = c("area","period","object")
 }

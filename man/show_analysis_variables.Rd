@@ -16,6 +16,6 @@ functions and a description of what each value means.
 }
 \examples{
 
-show_analysis_variables()
+policedatR::show_analysis_variables()
 
 }

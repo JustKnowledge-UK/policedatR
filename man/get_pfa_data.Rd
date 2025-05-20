@@ -70,7 +70,7 @@ Acquire stop and search data from police.uk API for Police Force Areas (PFAs)
 # Get the most recent 12 months of data for all PFAs.
 # Don't run as will take a while
 df <- get_pfa_data()
-}
+
 
 # Get data for a subset of PFAs, only the most recent month.
 df2 <- get_pfa_data(subset = list("pfa22nm" = "Metropolitan Police"), num_months_backwards = 1)
@@ -78,6 +78,6 @@ df2 <- get_pfa_data(subset = list("pfa22nm" = "Metropolitan Police"), num_months
 # Get data for the PFA to which Haringey belongs (i.e. Metropolitan Police). This
 # will give identical result to example 2 above.
 df3 <- get_pfa_data(subset = list("lad22nm" = c("Haringey")), num_months_backwards = 1)
-
+}
 
 }

@@ -4,7 +4,7 @@
 \alias{newest_data}
 \title{Retrieve most recent date for which data in API are available}
 \usage{
-newest_data()
+newest_data(timeout = 10)
 }
 \value{
 A string describing date in yyyy-mm format

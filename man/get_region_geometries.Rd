@@ -30,10 +30,10 @@ at December 2022.
 # Get all region geometries
 # Don't run as takes ~12 seconds
 region_geometries <- get_region_geometries()
-}
+
 
 # Get the Region that Haringey is a part of
 subset_geometries <- get_region_geometries(subset = list("lad22nm" = "Haringey"))
-
+}
 
 }
