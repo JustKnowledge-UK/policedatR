@@ -1,29 +1,29 @@
-#' Fetch police data
-#'
-#' Fetch police data workhorse for get_data functions. Submits POST requests to API
-#' at data.police.uk. Can be memoised (and is in the get_data functions) to speed up repeat calls.
-#'
-#' In practice the user does not need to directly call this function.
-#'
-#' @param body Body of POST request. A named list consisting of two elements; a
-#' 'poly' element defining a polygon as a character string in format 'lat1,long1:lat2,long2'
-#' and a 'date' defining a date as character string in format 'yyyy-mm'.
-#' @param wait_time On error, the time to wait before retrying. Default is 5.
-#' @param max_tries The number of tries before giving up the call. Default is 10.
-#'
-#' @returns An http response object
-#'
-#' @export
-#'
-#' @examples
-#'
-#' # Simplified example where the polygon is defined by only three points
-#' fetch_police_data(body = list(
-#'   'poly' = "51.6094409248573,-0.127876986589682:
-#'             51.6093817289251,-0.127378230001641:
-#'             51.6093739825532,-0.12644271332808",
-#'                             'date' = "2025-02"))
-#'
+# Fetch police data
+#
+# Fetch police data workhorse for get_data functions. Submits POST requests to API
+# at data.police.uk. Can be memoised (and is in the get_data functions) to speed up repeat calls.
+#
+# In practice the user does not need to directly call this function.
+#
+# @param body Body of POST request. A named list consisting of two elements; a
+# 'poly' element defining a polygon as a character string in format 'lat1,long1:lat2,long2'
+# and a 'date' defining a date as character string in format 'yyyy-mm'.
+# @param wait_time On error, the time to wait before retrying. Default is 5.
+# @param max_tries The number of tries before giving up the call. Default is 10.
+#
+# @returns An http response object
+#
+# @export
+#
+# @examples
+#
+# # Simplified example where the polygon is defined by only three points
+# fetch_police_data(body = list(
+#   'poly' = "51.6094409248573,-0.127876986589682:
+#             51.6093817289251,-0.127378230001641:
+#             51.6093739825532,-0.12644271332808",
+#                            'date' = "2025-02"))
+#
 fetch_police_data <- function(body,
                               wait_time = 5,
                               max_tries = 10){
@@ -67,33 +67,33 @@ fetch_police_data <- function(body,
 
 
 
-#' Fetch geometry data
-#'
-#' Fetch geometry data workhorse for get_geometry functions. Submits GET requests to API
-#' at geoportal.statistics.gov.uk. Can be memoised (and is in the get_geometry functions) to speed up repeat calls.
-#'
-#' In practice the user does not need to directly call this function.
-#'
-#' @param base_url The API endpoint. String.
-#' @param where_clause Subset of areas for which to acquire geometries. String
-#' @param result_offset For pagination user can start acquisition from an offset record number.
-#' @param max_records For pagination user can acquire a specific number of records. Geoportal max is 2000 but
-#' sometimes it prefers smaller payloads.
-#'
-#' @returns An http response object
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Don't run as takes a while
-#' # Simplified example where the polygon is defined by only three points
-#' response <- fetch_geometry_data(
-#'   base_url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Regions_December_2022_Boundaries_EN_BFC_V2/FeatureServer/0/query",
-#'   where_clause = "1=1",
-#'   result_offset = 0,
-#'   max_records = 2000
-#'   )
-#' }
+# Fetch geometry data
+#
+# Fetch geometry data workhorse for get_geometry functions. Submits GET requests to API
+# at geoportal.statistics.gov.uk. Can be memoised (and is in the get_geometry functions) to speed up repeat calls.
+#
+# In practice the user does not need to directly call this function.
+#
+# @param base_url The API endpoint. String.
+# @param where_clause Subset of areas for which to acquire geometries. String
+# @param result_offset For pagination user can start acquisition from an offset record number.
+# @param max_records For pagination user can acquire a specific number of records. Geoportal max is 2000 but
+# sometimes it prefers smaller payloads.
+#
+# @returns An http response object
+# @export
+#
+# @examples
+# \dontrun{
+# # Don't run as takes a while
+# # Simplified example where the polygon is defined by only three points
+# response <- fetch_geometry_data(
+#   base_url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Regions_December_2022_Boundaries_EN_BFC_V2/FeatureServer/0/query",
+#   where_clause = "1=1",
+#   result_offset = 0,
+#   max_records = 2000
+#   )
+# }
 
 fetch_geometry_data <- function(base_url,
                                 where_clause,
@@ -140,28 +140,28 @@ fetch_geometry_data <- function(base_url,
 }
 
 
-#' Fetch population estimates
-#'
-#' API workhorse for `get_population_estimates()`. Communicates with NOMIS API to
-#' get population estimates by ethnicity for local areas specified by the smallest
-#' level of geography in data (which must be column 1). Population estimates are
-#' from Census 2021 table TS021.
-#'
-#' Can be (and is in `get_population_estimates()`) memoised for quicker repeat
-#' requests.
-#'
-#' @param data
-#'
-#' @returns An S3 response object containing the response of the request.
-#'
-#' @examples
-#'
-#' # Mock df
-#' df <- data.frame("lad22cd" = c("E09000001","E09000002","E09000003"),
-#'                  "x" = seq(1:3))
-#'
-#' response <- fetch_population_estimates(df)
-#'
+# Fetch population estimates
+#
+# API workhorse for `get_population_estimates()`. Communicates with NOMIS API to
+# get population estimates by ethnicity for local areas specified by the smallest
+# level of geography in data (which must be column 1). Population estimates are
+# from Census 2021 table TS021.
+#
+# Can be (and is in `get_population_estimates()`) memoised for quicker repeat
+# requests.
+#
+# @param data
+#
+# @returns An S3 response object containing the response of the request.
+#
+# @examples
+#
+# # Mock df
+# df <- data.frame("lad22cd" = c("E09000001","E09000002","E09000003"),
+#                  "x" = seq(1:3))
+#
+# response <- fetch_population_estimates(df)
+#
 fetch_population_estimates <- function(data){
 
   # Endpoint

@@ -55,19 +55,21 @@ period_is_factor <- function(period, length_dates){
 }
 
 
-#' Create analysis periods from date
-#'
-#' Process date and create a period variable based on the user's specified period
-#' Calls `period_is_factor` to try to make sensible divisions based on the factors
-#' of period
-#'
-#' @param data
-#' @param period
-#'
-#' @returns
-#' @keywords internal
-#'
-#' @examples
+# Create analysis periods from date
+#
+# Process date and create a period variable based on the user's specified period
+# Calls `period_is_factor` to try to make sensible divisions based on the factors
+# of period
+#
+# @param data A tibble of stop data acquired using policedatR
+# @param period Numeric value specifying the number of months each time period
+# should be.
+#
+# @returns A mutated version of data which contains a formatted period variable.
+# @keywords internal
+#
+# @examples
+
 create_periods <- function(data, period){
   # Prepare the dates for the period check
   # separate date into separate columns
@@ -117,24 +119,21 @@ create_periods <- function(data, period){
 }
 
 
-#' Process ethnicity
-#'
-#' This function takes the ethnicity levels from population estimates which
-#' can then be used to remap the ethnicity levels in the police data. This
-#' facilitates joining the two in the analysis step.
-#'
-#' @param data Tibble acquired using policedatR
-#' @param ethnicity_definition Character specifying self-defined (`'self'`) or officer-defined ethnicity (`'officer'`)
-#' @param collapse_ethnicity Boolean indicating whether to aggregate ethnicity (`TRUE`) or not (`FALSE`)
-#'
-#' @returns The same tibble that was put in with a new `ethnicity` which is a tidied
-#' version of either self- or officer-defined ethnicity.
-#'
-#' @keywords internal
-#'
-#' @examples
-#'
-#' data <- process_ethnicity(data, ethnicity_definition = "self", collapse_ethnicity = TRUE)
+# This function takes the ethnicity levels from population estimates which
+# can then be used to remap the ethnicity levels in the police data. This
+# facilitates joining the two in the analysis step.
+# @param data Tibble acquired using policedatR
+# @param ethnicity_definition Character specifying self-defined (`'self'`) or officer-defined ethnicity (`'officer'`)
+# @param collapse_ethnicity Boolean indicating whether to aggregate ethnicity (`TRUE`) or not (`FALSE`)
+#
+# @returns The same tibble that was put in with a new `ethnicity` which is a tidied
+# version of either self- or officer-defined ethnicity.
+#
+# @keywords internal
+#
+# @examples
+#
+# data <- process_ethnicity(data, ethnicity_definition = "self", collapse_ethnicity = TRUE)
 process_ethnicity <- function(data, ethnicity_definition, collapse_ethnicity, population_ests = NULL){
   # If officer-defined force collapse_ethnicity TRUE. This should be redundant
   # as it will be specified in the script calling this function.
@@ -258,7 +257,7 @@ process_ethnicity <- function(data, ethnicity_definition, collapse_ethnicity, po
 #'
 #' @examples
 #'
-#' show_analysis_variables()
+#' policedatR::show_analysis_variables()
 #'
 show_analysis_variables <- function(){
   # Create a mapping between the input arguments and the data variables
@@ -279,22 +278,22 @@ show_analysis_variables <- function(){
   )
 }
 
-#' Risk ratio from data frame
-#'
-#' Calculates relative risk ratio and confidence intervals from a
-#' contingency table constructed for analysis of stop and search disparities
-#'
-#' @param df Contingency table as data frame on which to calculate risk ratio
-#' @param name Desired name of resultant data frame containing statistics
-#'
-#' @return A data frame containing risk ratio and confidence intervals
-#'
-#' @keywords internal
-#'
-#' @examples
-#'
-#' rr <- riskratio_from_df(df, "Stop and Search disparity")
-#'
+# Risk ratio from data frame
+#
+# Calculates relative risk ratio and confidence intervals from a
+# contingency table constructed for analysis of stop and search disparities
+#
+# @param df Contingency table as data frame on which to calculate risk ratio
+# @param name Desired name of resultant data frame containing statistics
+#
+# @return A data frame containing risk ratio and confidence intervals
+#
+# @keywords internal
+#
+# @examples
+#
+# rr <- riskratio_from_df(df, "Stop and Search disparity")
+#
 riskratio_from_df <- function(df){
 
   mat <- df %>%
