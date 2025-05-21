@@ -179,18 +179,18 @@ analyse_anything <- function(data,
 #'
 #' @examples
 #' # Get data for Haringey and Lambeth
-#' data <- policedatR::get_lad_data(list = c("lad22nm" = "Haringey"))
+#' data <- policedatR::get_lad_data(list("lad22nm" = "Haringey"))
 #'
 #' # Calculate risk ratio between Black and White people (White is reference).
 #' summarised_data <- calculate_riskratio(
 #'                                      data,
 #'                                      ethnicity_definition = "self",
-#'                                      collapse_ethnicity = T,
+#'                                      collapse_ethnicity = TRUE,
 #'                                      comparison = c("white","black"),
 #'                                      period = 12)
 calculate_riskratio <- function(data,
-                                ethnicity_definition = "self",
-                                collapse_ethnicity = T,
+                                ethnicity_definition,
+                                collapse_ethnicity,
                                 comparison = c("white","black"),
                                 period = 12){
 
