@@ -134,6 +134,9 @@ create_periods <- function(data, period){
 # @examples
 #
 # data <- process_ethnicity(data, ethnicity_definition = "self", collapse_ethnicity = TRUE)
+
+#' @importFrom stats setNames
+
 process_ethnicity <- function(data, ethnicity_definition, collapse_ethnicity, population_ests = NULL){
   # If officer-defined force collapse_ethnicity TRUE. This should be redundant
   # as it will be specified in the script calling this function.

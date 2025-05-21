@@ -28,6 +28,7 @@
 #' described by `analysis_variables`.
 #' @export
 #'
+#' @importFrom stats setNames
 #' @examples
 
 #' # Get data for Haringey
@@ -175,7 +176,7 @@ analyse_anything <- function(data,
 #'
 #' @examples
 #' # Get data for Haringey and Lambeth
-#' data <- policedatR::get_lad_data(list = c("lad22nm" = c(Haringey"))
+#' data <- policedatR::get_lad_data(list = c("lad22nm" = Haringey"))
 #'
 #' # Calculate risk ratio between Black and White people (White is reference).
 #' summarised_data <- calculate_riskratio(
