@@ -5,7 +5,7 @@
 \title{Calculate risk ratio}
 \usage{
 calculate_riskratio(
-  df,
+  data,
   ethnicity_definition = "self",
   collapse_ethnicity = T,
   comparison = c("white", "black"),
@@ -13,7 +13,7 @@ calculate_riskratio(
 )
 }
 \arguments{
-\item{df}{A tibble of stop data acquired using policedatR. The first column
+\item{data}{A tibble of stop data acquired using policedatR. The first column
 must be the area code variable of the geography of interest (e.g. 'lad22cd').}
 
 \item{ethnicity_definition}{String specifying which ethnicity definition to use

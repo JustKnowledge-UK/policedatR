@@ -10,6 +10,10 @@ get_population_estimates(data, collapse_ethnicity)
 \item{data}{A data frame or tibble of data. This will usually be be an output
 of another policedatR function like get_data or analyse_data. The first column
 must be the geography variable for which population estimates are desired.}
+
+\item{collapse_ethnicity}{If \code{ethnicity_definition == 'self'}, this controls
+whether to use the 18 disaggregated categories or to aggregate to the 5 broader
+categories. If \code{ethnicity_definition == 'self'}, \code{collapse_ethnicity} is always TRUE.}
 }
 \value{
 A long-format tibble with population estimates for each ethnicity
@@ -26,6 +30,6 @@ with the NOMIS API.
 df <- data.frame("lad22cd" = c("E09000001","E09000002","E09000003"),
                  "x" = seq(1:3))
 
-population_estimates <- get_population_estimates(df)
+population_estimates <- get_population_estimates(df, collapse_ethnicity = TRUE)
 
 }

@@ -70,7 +70,7 @@ Acquire stop and search data from police.uk API for Regions
 # Don't run as will take a while.
 df <- get_region_data()
 
-
+}
 # Get data for a subset of Regions, only the most recent month
 df2 <- get_region_data(subset = list("rgn22nm" = "London"), num_months_backwards = 1)
 
@@ -78,6 +78,6 @@ df2 <- get_region_data(subset = list("rgn22nm" = "London"), num_months_backwards
 # Get data for the Region to which Haringey belongs (i.e. London). This
 # will give identical result to example 2 above.
 df3 <- get_region_data(subset = list("lad22nm" = c("Haringey")), num_months_backwards = 1)
-}
+
 
 }

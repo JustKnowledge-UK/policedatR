@@ -46,3 +46,13 @@ grouping level. In the example above, the denominator would be the total number
 of stops within each area-period combination. The options for defining \code{analysis_variables}
 can be found using \code{show_analysis_variables()}.
 }
+\examples{
+# Get data for Haringey
+data <- policedatR::get_lad_data(list("lad22nm" = "Haringey"))
+# Count the number of stops for each object of search within each area and
+# time period
+summarised_data <- analyse_anything(
+                           data,
+                           analysis_variables = c("area","period","object"),
+                           period = 12)
+}

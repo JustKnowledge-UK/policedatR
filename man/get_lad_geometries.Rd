@@ -28,11 +28,11 @@ at December 2022.
 # Get all LAD geometries
 # Don't run as will take a while.
 lad_geometries <- get_lad_geometries()
-
+}
 # Get just Haringey and Lambeth geometries using 'lad22nm' variable
 subset_geometries <- get_lad_geometries(subset = list("lad22nm" = c("Haringey", "Lambeth")))
 
 # Get just Haringey and Lambeth geometries using 'lad22cd' variable
 subset_geometries <- get_lad_geometries(subset = list("lad22cd" = c("E09000014", "E09000022")))
-}
+
 }

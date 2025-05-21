@@ -32,9 +32,9 @@ at December 2022.
 # Don't run as takes ~49 seconds
 pfa_geometries <- get_pfa_geometries()
 
-
+}
 # Get the PFA that Haringey is a part of
 subset_geometries <- get_lad_geometries(subset = list("lad22nm" = "Haringey"))
-}
+
 
 }

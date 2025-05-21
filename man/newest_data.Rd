@@ -6,6 +6,10 @@
 \usage{
 newest_data(timeout = 10)
 }
+\arguments{
+\item{timeout}{Numeric specifying seconds to wait before giving up API request.
+Default is 10.}
+}
 \value{
 A string describing date in yyyy-mm format
 }

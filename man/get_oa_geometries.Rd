@@ -31,10 +31,10 @@ all_oas <- get_oa_geometries()
 # Get OAs in the Greater London region
 # Don't run as will take a long time
 london_oas <- get_oa_geometries(subset = list("rgn22nm" = "London"))
-
+}
 
 # Get OAs just in Haringey and Waltham Forest
 haringey_oas <- get_oa_geometries(subset = list("lad22nm" = "Haringey"))
-}
+
 
 }
