@@ -292,7 +292,7 @@ show_analysis_variables <- function(){
 #
 # @examples
 #
-# rr <- riskratio_from_df(df, "Stop and Search disparity")
+# rr <- riskratio_from_df(df)
 #
 riskratio_from_df <- function(df){
 
