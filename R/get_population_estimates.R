@@ -7,6 +7,9 @@
 #' @param data A data frame or tibble of data. This will usually be be an output
 #' of another policedatR function like get_data or analyse_data. The first column
 #' must be the geography variable for which population estimates are desired.
+#' @param collapse_ethnicity If `ethnicity_definition == 'self'`, this controls
+#' whether to use the 18 disaggregated categories or to aggregate to the 5 broader
+#' categories. If `ethnicity_definition == 'self'`, `collapse_ethnicity` is always TRUE.
 #'
 #' @returns A long-format tibble with population estimates for each ethnicity
 #' for each (lowest-level) geography in data.
