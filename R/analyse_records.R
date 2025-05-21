@@ -807,17 +807,17 @@ analyse_anything <- function(data,
 #'                                      comparison = c("white","black"),
 #'                                      period = 12)
 #'}
-calculate_riskratio <- function(df,
+calculate_riskratio <- function(data,
                                 ethnicity_definition = "self",
                                 collapse_ethnicity = T,
                                 comparison = c("white","black"),
                                 period = 12){
 
-  area_variable <- colnames(df)[1]
-  all_area_variables <- colnames(df)[1:which(colnames(df) == "rgn22nm")]
-  remaining_area_variables <- colnames(df)[2:which(colnames(df) == "rgn22nm")]
+  area_variable <- colnames(data)[1]
+  all_area_variables <- colnames(data)[1:which(colnames(data) == "rgn22nm")]
+  remaining_area_variables <- colnames(data)[2:which(colnames(data) == "rgn22nm")]
 
-  population_ests <- policedatR::get_population_estimates(df, collapse_ethnicity)
+  population_ests <- policedatR::get_population_estimates(data, collapse_ethnicity)
 
   # Get the count data
   summarised_data <- policedatR::analyse_anything(data, c("area","period","ethnicity"),
