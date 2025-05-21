@@ -24,10 +24,10 @@
 #' # Don't run as takes ~12 seconds
 #' region_geometries <- get_region_geometries()
 #'
-#'
+#'}
 #' # Get the Region that Haringey is a part of
 #' subset_geometries <- get_region_geometries(subset = list("lad22nm" = "Haringey"))
-#'}
+#'
 #'
 get_region_geometries <- function(subset = NULL){
 
@@ -135,10 +135,10 @@ get_region_geometries <- function(subset = NULL){
 #' # Don't run as takes ~49 seconds
 #' pfa_geometries <- get_pfa_geometries()
 #'
-#'
+#'}
 #' # Get the PFA that Haringey is a part of
 #' subset_geometries <- get_lad_geometries(subset = list("lad22nm" = "Haringey"))
-#'}
+#'
 #'
 get_pfa_geometries <- function(subset = NULL){
 
@@ -243,13 +243,13 @@ get_pfa_geometries <- function(subset = NULL){
 #' # Get all LAD geometries
 #' # Don't run as will take a while.
 #' lad_geometries <- get_lad_geometries()
-#'
+#'}
 #' # Get just Haringey and Lambeth geometries using 'lad22nm' variable
 #' subset_geometries <- get_lad_geometries(subset = list("lad22nm" = c("Haringey", "Lambeth")))
 #'
 #' # Get just Haringey and Lambeth geometries using 'lad22cd' variable
 #' subset_geometries <- get_lad_geometries(subset = list("lad22cd" = c("E09000014", "E09000022")))
-#'}
+#'
 get_lad_geometries <- function(subset = NULL){
 
   # API endpoint
@@ -411,11 +411,12 @@ get_lad_geometries <- function(subset = NULL){
 #' # Don't run as will take ~31 seconds
 #' london_msoas <- get_msoa_geometries(subset = list("rgn22nm" = "London"))
 #'
+#'}
 #'
 #' # Get MSOAs just in Haringey and Waltham Forest
 #' hw_msoas <- get_msoa_geometries(
 #'                 subset = list("lad22nm" = c("Haringey", "Waltham Forest")))
-#'}
+#'
 #'
 get_msoa_geometries <- function(subset = NULL){
 
@@ -583,12 +584,12 @@ get_msoa_geometries <- function(subset = NULL){
 #' # Get LSOAs in the Greater London region
 #' # Don't run as will take a while
 #' london_lsoas <- get_lsoa_geometries(subset = list("rgn22nm" = "London"))
-#'
+#'}
 #' # Get LSOAs just in Haringey and Waltham Forest
 #' hw_lsoas <- get_lsoa_geometries(
 #'                 subset = list("lad22nm" = c("Haringey", "Waltham Forest"))
 #'                 )
-#'}
+#'
 #'
 get_lsoa_geometries <- function(subset = NULL){
 
@@ -755,11 +756,11 @@ get_lsoa_geometries <- function(subset = NULL){
 #' # Get OAs in the Greater London region
 #' # Don't run as will take a long time
 #' london_oas <- get_oa_geometries(subset = list("rgn22nm" = "London"))
-#'
+#'}
 #'
 #' # Get OAs just in Haringey and Waltham Forest
 #' haringey_oas <- get_oa_geometries(subset = list("lad22nm" = "Haringey"))
-#'}
+#'
 #'
 get_oa_geometries <- function(subset = NULL){
 
