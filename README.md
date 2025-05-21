@@ -59,7 +59,7 @@ Once we have data, we can do some basic analysis. The analyse_anything() functio
 Disparities by ethnicity are of course a key concern. To count the number of stops of people of each ethnicity we could use the `analysis_variables = c("area","period","ethnicity")`. When including ethnicity, we must specificy how ethnicity is treated. In the data there is 'self-defined ethnicity' and 'officer-defined'. Self-defined consists of 18 detailed categories. Officer-defined consists of five aggregated categories. Self-defined may be more accurate but may have more NAs as citizens do not have to respond. Officer-defined may be less accurate but technically should have no NAs as officers must record this if self-defined has not been provided. If specifying self-defined, you can additionally choose whether to aggregate the categories down to five. A typical code would be:
 
 ```
-ethnicity_summary <- analyse_anything(data, area_variables = c("area","period","ethnicity"), ethnicity_definition = "self", collapse_ethnicity = TRUE, period = 12)
+ethnicity_summary <- analyse_anything(london_data, area_variables = c("area","period","ethnicity"), ethnicity_definition = "self", collapse_ethnicity = TRUE, period = 12)
 ```
 
 The period argument specifies how many months each period for analysis should be. If this was e.g. 1, this would produce account for each month within each area.
@@ -71,7 +71,7 @@ We may be interested to quantify the extent of a disparity between two ethniciti
 If we are interested in quantifying the extent of the disparity between Black and White citizens, we run:
 
 ```
-disparity <- calculate_riskratio(data, ethnicity_definition = "self", collapse_ethnicity = TRUE, comparison = c("white","black"), period = 12)
+disparity <- calculate_riskratio(london_data, ethnicity_definition = "self", collapse_ethnicity = TRUE, comparison = c("white","black"), period = 12)
 ```
 
 The output will be a dataframe containing the counts and rates per population by area-period-ethnicity for only the ethnicities in `comparison`, plus the risk ratio and associated confidence intervals.
