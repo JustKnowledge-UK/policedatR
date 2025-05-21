@@ -36,7 +36,10 @@
 
 #' # Count the number of stops for each object of search within each area and
 #' # time period
-#' summarised_data <- analyse_anything(data, analysis_variables = c("area","period","object"), period = 12)
+#' summarised_data <- analyse_anything(
+#'                            data,
+#'                            analysis_variables = c("area","period","object"),
+#'                            period = 12)
 
 
 analyse_anything <- function(data,
@@ -176,7 +179,7 @@ analyse_anything <- function(data,
 #'
 #' @examples
 #' # Get data for Haringey and Lambeth
-#' data <- policedatR::get_lad_data(list = c("lad22nm" = Haringey"))
+#' data <- policedatR::get_lad_data(list = c("lad22nm" = "Haringey"))
 #'
 #' # Calculate risk ratio between Black and White people (White is reference).
 #' summarised_data <- calculate_riskratio(
