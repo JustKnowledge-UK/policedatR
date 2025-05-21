@@ -66,13 +66,15 @@ The period argument specifies how many months each period for analysis should be
 
 The output of the above function is a dataframe containing the counts by area-period-ethnicity, and a percentage representing the proprotion of counts of each ethnicity as a function of the total counts within each area-period.
 
-We may be interested to quantify the extent of a disparity between two ethnicities. To do this, you can use the `calculate_riskratio()` function. This function essentially performs the `analyse_anything()` function above but additionally merges this result with Census 2021 population estimates to calculate the risk ratio of being stopped for one ethnicity versus another. The same ethnicity argument options as above are available. In addition, you must specify what `comparison` you want to make. This is a character vector, where the first element should be the reference ethnicity, and the second element the 'test' ethnicity. If you don't know what the values of ethnicity are, passing `comparison = NULL` will produce a list of the ethnicities present in the data and will prompt you to choose your reference and test categories.
+We may be interested to quantify the extent of a disparity between two ethnicities. To do this, you can use the `calculate_riskratio()` function. This function essentially performs the `analyse_anything()` function above but additionally merges this result with Census 2021 population estimates to calculate the risk ratio (using `epitools::riskratio()`) of being stopped for one ethnicity versus another. The same ethnicity argument options as above are available. In addition, you must specify what `comparison` you want to make. This is a character vector, where the first element should be the reference ethnicity, and the second element the 'test' ethnicity. If you don't know what the values of ethnicity are, passing `comparison = NULL` will produce a list of the ethnicities present in the data and will prompt you to choose your reference and test categories.
 
 If we are interested in quantifying the extent of the disparity between Black and White citizens, we run:
 
 ```
-disparity <- calculate_riskratio(data, ethnicity_definition = "self", collapse_ethnicity = TRUE, comparison = c("white","black"))
+disparity <- calculate_riskratio(data, ethnicity_definition = "self", collapse_ethnicity = TRUE, comparison = c("white","black"), period = 12)
 ```
+
+The output will be a dataframe containing the counts and rates per population by area-period-ethnicity for only the ethnicities in `comparison`, plus the risk ratio and associated confidence intervals.
 
 
 ## Notes on licencing
