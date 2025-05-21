@@ -863,7 +863,11 @@ calculate_riskratio <- function(df,
     dplyr::filter(dplyr::n_distinct(ethnicity) == 2) %>%   # ensure two unique ethnicities per group
     dplyr::select(!!rlang::sym(area_variable), period, ethnicity, not_stopped, stopped) %>%
     tidyr::nest() %>%
-    dplyr::mutate(rr_info = purrr::map(data, riskratio_from_df)) %>%
+    dplyr::mutate(
+      # First ensure ethnicity_1 is the first row
+      data = purrr::map(data, ~ .x %>% dplyr::arrange(dplyr::desc(ethnicity == ethnicity_1))),
+      # Then run risk ratio
+      rr_info = purrr::map(data, riskratio_from_df)) %>%
     tidyr::unnest(rr_info) %>%
     dplyr::select(-data)
 
