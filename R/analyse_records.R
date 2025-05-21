@@ -40,16 +40,15 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' #' # Get data for Haringey
-#' data <- policedatR::get_lad_data(list("lad22nm" = "Haringey)
+#' # Get data for Haringey
+#' data <- policedatR::get_lad_data(list("lad22nm" = "Haringey"))
 #'
 #' # Count by self-defined ethnicity in one-month periods
 #' counted_data <- count_stops(data,
 #'                             ethnicity_definition = "self",
 #'                             period = 1
 #'                            )
-#'}
+#'
 #'
 count_stops <- function(data,
                         ethnicity_definition = c("self","officer"),
@@ -649,14 +648,14 @@ count_stops <- function(data,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+
 #' # Get data for Haringey
-#' data <- policedatR::get_lad_data(list("lad22nm" = "Haringey)
+#' data <- policedatR::get_lad_data(list("lad22nm" = "Haringey"))
 
 #' # Count the number of stops for each object of search within each area and
 #' # time period
-#' analyse_anything(data, analysis_variables = c("area","period","object"), period = 12)
-#' }
+#' summarised_data <- analyse_anything(data, analysis_variables = c("area","period","object"), period = 12)
+
 
 analyse_anything <- function(data,
                              analysis_variables,
@@ -759,7 +758,7 @@ analyse_anything <- function(data,
       # Make NAs for n and percentage 0 - this is safe as NAs are a result of the left_join which
       # flags the combinations that weren't counted in the summarise step because
       # they didn't exist
-      across(c(n, percentage), ~ ifelse(is.na(.), 0, .))
+      dplyr::across(c(n, percentage), ~ ifelse(is.na(.), 0, .))
     ) %>%
     # Make order the same as grouping - this was lost in the left_join above
     dplyr::arrange(!!!rlang::syms(analysis_variables2[-length(analysis_variables2)]))
@@ -774,7 +773,7 @@ analyse_anything <- function(data,
 #' produce counts for each area-period-ethnicity combination, then runs`epitools::riskratio()`
 #' on the output to calculate the risk ratioand confidence interval of stop rates of specified
 #' ethnicities for each area and period.
-#' @param df A tibble of stop data acquired using policedatR. The first column
+#' @param data A tibble of stop data acquired using policedatR. The first column
 #' must be the area code variable of the geography of interest (e.g. 'lad22cd').
 #' @param ethnicity_definition String specifying which ethnicity definition to use
 #' for counts. 'self' has the possibility of using the 18 disaggregated categories but is likely
@@ -794,10 +793,8 @@ analyse_anything <- function(data,
 #' @export
 #'
 #' @examples
-#'
-#' \dontrun{
 #' # Get data for Haringey and Lambeth
-#' data <- policedatR::get_lad_data(list = c("lad22nm" = c(Haringey","Lambeth"))
+#' data <- policedatR::get_lad_data(list = c("lad22nm" = c(Haringey"))
 #'
 #' # Calculate risk ratio between Black and White people (White is reference).
 #' summarised_data <- calculate_riskratio(
@@ -806,7 +803,6 @@ analyse_anything <- function(data,
 #'                                      collapse_ethnicity = T,
 #'                                      comparison = c("white","black"),
 #'                                      period = 12)
-#'}
 calculate_riskratio <- function(data,
                                 ethnicity_definition = "self",
                                 collapse_ethnicity = T,
@@ -878,14 +874,14 @@ calculate_riskratio <- function(data,
 
   # Add in the other area variables
   all_areas <- area_lookup %>%
-    dplyr::select(all_of(all_area_variables)) %>%
+    dplyr::select(dplyr::all_of(all_area_variables)) %>%
     dplyr::distinct()
 
   # Join area variables to data and locate them sensibly
   complete_data <- complete_data %>%
     dplyr::left_join(all_areas, by = area_variable) %>%
     # Locate the area variables at the left of the dataframe
-    dplyr::relocate(all_of(remaining_area_variables), .after = area_variable)
+    dplyr::relocate(dplyr::all_of(remaining_area_variables), .after = area_variable)
 
   return(complete_data)
 
