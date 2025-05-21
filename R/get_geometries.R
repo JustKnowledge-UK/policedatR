@@ -49,10 +49,10 @@ get_region_geometries <- function(subset = NULL){
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
     # Memoise the function
-    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
+    fetch_data <- memoise::memoise(fetch_geometry_data, cache = cd)
   }
   else{
-    fetch_data <- policedatR::fetch_geometry_data
+    fetch_data <- fetch_geometry_data
   }
 
   # Helper: Parse http response to sf and tidy
@@ -158,10 +158,10 @@ get_pfa_geometries <- function(subset = NULL){
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
     # Memoise the function
-    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
+    fetch_data <- memoise::memoise(fetch_geometry_data, cache = cd)
   }
   else{
-    fetch_data <- policedatR::fetch_geometry_data
+    fetch_data <- fetch_geometry_data
   }
 
   # Helper: Parse http response to sf and tidy
@@ -243,13 +243,13 @@ get_pfa_geometries <- function(subset = NULL){
 #' # Get all LAD geometries
 #' # Don't run as will take a while.
 #' lad_geometries <- get_lad_geometries()
-#' }
+#'
 #' # Get just Haringey and Lambeth geometries using 'lad22nm' variable
 #' subset_geometries <- get_lad_geometries(subset = list("lad22nm" = c("Haringey", "Lambeth")))
 #'
 #' # Get just Haringey and Lambeth geometries using 'lad22cd' variable
 #' subset_geometries <- get_lad_geometries(subset = list("lad22cd" = c("E09000014", "E09000022")))
-#'
+#'}
 get_lad_geometries <- function(subset = NULL){
 
   # API endpoint
@@ -270,10 +270,10 @@ get_lad_geometries <- function(subset = NULL){
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
     # Memoise the function
-    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
+    fetch_data <- memoise::memoise(fetch_geometry_data, cache = cd)
   }
   else{
-    fetch_data <- policedatR::fetch_geometry_data
+    fetch_data <- fetch_geometry_data
   }
 
   # Helper to process and clean each chunk
@@ -436,10 +436,10 @@ get_msoa_geometries <- function(subset = NULL){
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
     # Memoise the function
-    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
+    fetch_data <- memoise::memoise(fetch_geometry_data, cache = cd)
   }
   else{
-    fetch_data <- policedatR::fetch_geometry_data
+    fetch_data <- fetch_geometry_data
   }
 
   # Helper to process and clean each chunk
@@ -609,10 +609,10 @@ get_lsoa_geometries <- function(subset = NULL){
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
     # Memoise the function
-    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
+    fetch_data <- memoise::memoise(fetch_geometry_data, cache = cd)
   }
   else{
-    fetch_data <- policedatR::fetch_geometry_data
+    fetch_data <- fetch_geometry_data
   }
 
   # Helper to process and clean each chunk
@@ -780,10 +780,10 @@ get_oa_geometries <- function(subset = NULL){
   if(caching){
     cd = cachem::cache_disk(cache_dir, evict = "lru")
     # Memoise the function
-    fetch_data <- memoise::memoise(policedatR::fetch_geometry_data, cache = cd)
+    fetch_data <- memoise::memoise(fetch_geometry_data, cache = cd)
   }
   else{
-    fetch_data <- policedatR::fetch_geometry_data
+    fetch_data <- fetch_geometry_data
   }
 
   # Helper to process and clean each chunk

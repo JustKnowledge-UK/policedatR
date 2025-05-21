@@ -257,11 +257,11 @@ get_region_data <- function(subset = NULL,
         if(caching){
           cd = cachem::cache_disk(cache_dir, evict = "lru")
           # Memoise the function
-          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          fetch_police_data_memoised <- memoise::memoise(fetch_police_data, cache = cd)
           post_request <- fetch_police_data_memoised(body = body)
         }
         else {
-          post_request <- policedatR::fetch_police_data(body = body)
+          post_request <- fetch_police_data(body = body)
         }
 
 
@@ -669,11 +669,11 @@ get_pfa_data <- function(subset = NULL,
         if(caching){
           cd = cachem::cache_disk(cache_dir, evict = "lru")
           # Memoise the function
-          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          fetch_police_data_memoised <- memoise::memoise(fetch_police_data, cache = cd)
           post_request <- fetch_police_data_memoised(body = body)
         }
         else {
-          post_request <- policedatR::fetch_police_data(body = body)
+          post_request <- fetch_police_data(body = body)
         }
 
         # get data from results of query
@@ -871,12 +871,12 @@ get_pfa_data <- function(subset = NULL,
 #' # Get the most recent 12 months of data for all LADs.
 #' # Don't run as will take a while.
 #' df <- get_lad_data()
-#' }
+#'
 #' # Get data for a subset of LADs, only the most recent month
 #' df2 <- get_lad_data(subset = list(
 #'                       "lad22nm" = c('Haringey','Waltham Forest')),
 #'                       num_months_backwards = 1)
-#'
+#' }
 #'
 get_lad_data <- function(subset = NULL,
                          num_months_backwards = 12,
@@ -1081,11 +1081,11 @@ get_lad_data <- function(subset = NULL,
         if(caching){
           cd = cachem::cache_disk(cache_dir, evict = "lru")
           # Memoise the function
-          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          fetch_police_data_memoised <- memoise::memoise(fetch_police_data, cache = cd)
           post_request <- fetch_police_data_memoised(body = body)
         }
         else {
-          post_request <- policedatR::fetch_police_data(body = body)
+          post_request <- fetch_police_data(body = body)
         }
 
         # get data from results of query
@@ -1495,11 +1495,11 @@ get_msoa_data <- function(subset = NULL,
         if(caching){
           cd = cachem::cache_disk(cache_dir, evict = "lru")
           # Memoise the function
-          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          fetch_police_data_memoised <- memoise::memoise(fetch_police_data, cache = cd)
           post_request <- fetch_police_data_memoised(body = body)
         }
         else {
-          post_request <- policedatR::fetch_police_data(body = body)
+          post_request <- fetch_police_data(body = body)
         }
 
 
@@ -1915,11 +1915,11 @@ get_lsoa_data <- function(subset = NULL,
         if(caching){
           cd = cachem::cache_disk(cache_dir, evict = "lru")
           # Memoise the function
-          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          fetch_police_data_memoised <- memoise::memoise(fetch_police_data, cache = cd)
           post_request <- fetch_police_data_memoised(body = body)
         }
         else {
-          post_request <- policedatR::fetch_police_data(body = body)
+          post_request <- fetch_police_data(body = body)
         }
 
 
@@ -2333,11 +2333,11 @@ get_oa_data <- function(subset = NULL,
         if(caching){
           cd = cachem::cache_disk(cache_dir, evict = "lru")
           # Memoise the function
-          fetch_police_data_memoised <- memoise::memoise(policedatR::fetch_police_data, cache = cd)
+          fetch_police_data_memoised <- memoise::memoise(fetch_police_data, cache = cd)
           post_request <- fetch_police_data_memoised(body = body)
         }
         else {
-          post_request <- policedatR::fetch_police_data(body = body)
+          post_request <- fetch_police_data(body = body)
         }
 
 
