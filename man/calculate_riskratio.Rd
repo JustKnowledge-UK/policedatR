@@ -6,8 +6,8 @@
 \usage{
 calculate_riskratio(
   data,
-  ethnicity_definition = "self",
-  collapse_ethnicity = T,
+  ethnicity_definition,
+  collapse_ethnicity,
   comparison = c("white", "black"),
   period = 12
 )
@@ -42,4 +42,16 @@ policedatR::analyse_anything() with the grouping \verb{(area, period, ethnicity)
 produce counts for each area-period-ethnicity combination, then runs\code{epitools::riskratio()}
 on the output to calculate the risk ratioand confidence interval of stop rates of specified
 ethnicities for each area and period.
+}
+\examples{
+# Get data for Haringey and Lambeth
+data <- policedatR::get_lad_data(list("lad22nm" = "Haringey"))
+
+# Calculate risk ratio between Black and White people (White is reference).
+summarised_data <- calculate_riskratio(
+                                     data,
+                                     ethnicity_definition = "self",
+                                     collapse_ethnicity = TRUE,
+                                     comparison = c("white","black"),
+                                     period = 12)
 }
