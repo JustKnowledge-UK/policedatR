@@ -19,7 +19,7 @@
 #' df <- data.frame("lad22cd" = c("E09000001","E09000002","E09000003"),
 #'                  "x" = seq(1:3))
 #'
-#' population_estimates <- get_population_estimates(df)
+#' population_estimates <- get_population_estimates(df, collapse_ethnicity = TRUE)
 #'
 get_population_estimates <- function(data, collapse_ethnicity){
 
