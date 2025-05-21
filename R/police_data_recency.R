@@ -1,6 +1,9 @@
 #' Retrieve most recent date for which data in API are available
 #'
 #'
+#' @param timeout Numeric specifying seconds to wait before giving up API request.
+#' Default is 10.
+#'
 #' @return A string describing date in yyyy-mm format
 #' @export
 #'
@@ -13,7 +16,7 @@ newest_data <- function(timeout = 10){
   newest <- tryCatch({
     R.utils::withTimeout({
       httr::GET("https://data.police.uk/api/crimes-street-dates", httr::timeout(timeout))
-    }, timeout = timeout)  # Allow slightly longer than GET timeout, just in case
+    }, timeout = timeout)
   }, TimeoutException = function(e) {
     message("Timed out")
     return(NULL)
@@ -44,9 +47,12 @@ newest_data <- function(timeout = 10){
 
 #' Retrieve oldest date for which data in API are available
 #'
+#' @param timeout Numeric specifying seconds to wait before giving up API request.
+#' Default is 10.
 #'
 #' @return A string describing date in yyyy-mm format
 #' @export
+#'
 #'
 #' @examples
 #'
