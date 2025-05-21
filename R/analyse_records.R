@@ -40,7 +40,7 @@
 #' @export
 #'
 #' @examples
-#'
+#' \dontrun{
 #' #' # Get data for Haringey
 #' data <- policedatR::get_lad_data(list("lad22nm" = "Haringey)
 #'
@@ -49,6 +49,7 @@
 #'                             ethnicity_definition = "self",
 #'                             period = 1
 #'                            )
+#'}
 #'
 count_stops <- function(data,
                         ethnicity_definition = c("self","officer"),
@@ -648,12 +649,14 @@ count_stops <- function(data,
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Get data for Haringey
 #' data <- policedatR::get_lad_data(list("lad22nm" = "Haringey)
 
 #' # Count the number of stops for each object of search within each area and
 #' # time period
 #' analyse_anything(data, analysis_variables = c("area","period","object"), period = 12)
+#' }
 
 analyse_anything <- function(data,
                              analysis_variables,
@@ -792,6 +795,7 @@ analyse_anything <- function(data,
 #'
 #' @examples
 #'
+#' \dontrun{
 #' # Get data for Haringey and Lambeth
 #' data <- policedatR::get_lad_data(list = c("lad22nm" = c(Haringey","Lambeth"))
 #'
@@ -802,7 +806,7 @@ analyse_anything <- function(data,
 #'                                      collapse_ethnicity = T,
 #'                                      comparison = c("white","black"),
 #'                                      period = 12)
-
+#'}
 calculate_riskratio <- function(df,
                                 ethnicity_definition = "self",
                                 collapse_ethnicity = T,
