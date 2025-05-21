@@ -45,7 +45,7 @@
 #' # Don't run as will take a while.
 #' df <- get_region_data()
 #'
-#'
+#' }
 #' # Get data for a subset of Regions, only the most recent month
 #' df2 <- get_region_data(subset = list("rgn22nm" = "London"), num_months_backwards = 1)
 #'
@@ -53,7 +53,7 @@
 #' # Get data for the Region to which Haringey belongs (i.e. London). This
 #' # will give identical result to example 2 above.
 #' df3 <- get_region_data(subset = list("lad22nm" = c("Haringey")), num_months_backwards = 1)
-#'}
+#'
 #'
 get_region_data <- function(subset = NULL,
                          num_months_backwards = 12,
@@ -70,9 +70,9 @@ get_region_data <- function(subset = NULL,
   policedatR::caching_check()
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
-  ########################
+
   #### Error handling ####
-  ########################
+
 
   # Make sure that user can't specify an incorrect time period
   # 1. Too many months backwards
@@ -116,21 +116,21 @@ get_region_data <- function(subset = NULL,
     stop("Error: Time period not specified or incomplete. Either num_months_backwards or both oldest_month and oldest_year must be specified")
   }
 
-  ###########################
-  ### End: Error handling ###
-  ###########################
+
+  #### End: Error handling ####
+
 
   t1 <- Sys.time()
 
-  ########################
+
   #### Get geometries ####
-  ########################
+
 
   geometries <- policedatR::get_region_geometries(subset)
 
-  #############################
+
   #### End: Get geometries ####
-  #############################
+
 
   # Initialise variables
   overall_output <- data.frame()
@@ -166,9 +166,9 @@ get_region_data <- function(subset = NULL,
   #   }
   # }
 
-  #####################################
+
   #### h loop: iterates over areas ####
-  #####################################
+
 
   for(h in 1:nrow(geometries)){
     cat(paste0("\nStarted area ", h)) # report start (useful for debugging)
@@ -176,9 +176,9 @@ get_region_data <- function(subset = NULL,
     area_output <- data.frame() # initialise area output df
     number_months_acquired <- 0 # initialise number of months acquired counter
 
-    ###################################################
+
     #### i loop: iterates over the months required ####
-    ###################################################
+
 
     for(i in 1:num_months_backwards){
       month_output <- data.frame()
@@ -204,9 +204,9 @@ get_region_data <- function(subset = NULL,
 
       date <- paste(year, "-", month, sep = "") # combine dates into one string
 
-      ################
+
       #### j loop ####
-      ################
+
       # Iterates over the coordinate sets within each LA and creates a
       # polygon string to be searched, and then submits the query.
       # Most LAs have only one coordinate set, but some have multiple (e.g.,
@@ -293,9 +293,9 @@ get_region_data <- function(subset = NULL,
 
       }
 
-      #####################################
+
       #### End: Coordinate set loop (j) ####
-      #####################################
+
 
 
 
@@ -309,9 +309,9 @@ get_region_data <- function(subset = NULL,
 
     }
 
-    #############################
+
     #### End: Month loop (i) ####
-    #############################
+
 
     # If there were no records for this LA, record the LA iteration number
     # and name, then proceed to the next LA
@@ -385,9 +385,9 @@ get_region_data <- function(subset = NULL,
     # save(save_progress, file = "./save_progress.Rdata")
   }
 
-  ############################
+
   #### End: Area loop (h) ####
-  ############################
+
 
   # Add in area lookup. Not much to do here for regions
   # areas_above <- area_lookup %>%
@@ -456,7 +456,7 @@ get_region_data <- function(subset = NULL,
 #' # Get the most recent 12 months of data for all PFAs.
 #' # Don't run as will take a while
 #' df <- get_pfa_data()
-#'
+#' }
 #'
 #' # Get data for a subset of PFAs, only the most recent month.
 #' df2 <- get_pfa_data(subset = list("pfa22nm" = "Metropolitan Police"), num_months_backwards = 1)
@@ -464,7 +464,7 @@ get_region_data <- function(subset = NULL,
 #' # Get data for the PFA to which Haringey belongs (i.e. Metropolitan Police). This
 #' # will give identical result to example 2 above.
 #' df3 <- get_pfa_data(subset = list("lad22nm" = c("Haringey")), num_months_backwards = 1)
-#' }
+#'
 #'
 get_pfa_data <- function(subset = NULL,
                          num_months_backwards = 12,
@@ -482,9 +482,9 @@ get_pfa_data <- function(subset = NULL,
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
-  ########################
+
   #### Error handling ####
-  ########################
+
 
   # Make sure that user can't specify an incorrect time period
   # 1. Too many months backwards
@@ -528,21 +528,16 @@ get_pfa_data <- function(subset = NULL,
     stop("Error: Time period not specified or incomplete. Either num_months_backwards or both oldest_month and oldest_year must be specified")
   }
 
-  ###########################
-  ### End: Error handling ###
-  ###########################
+
 
   t1 <- Sys.time()
 
-  ########################
+
   #### Get geometries ####
-  ########################
 
   geometries <- policedatR::get_pfa_geometries(subset)
 
-  #############################
-  #### End: Get geometries ####
-  #############################
+
 
   # Initialise variables
   overall_output <- data.frame()
@@ -578,9 +573,9 @@ get_pfa_data <- function(subset = NULL,
   #   }
   # }
 
-  #####################################
+
   #### h loop: iterates over areas ####
-  #####################################
+
 
   for(h in 1:nrow(geometries)){
     cat(paste0("\nStarted area ", h)) # report start (useful for debugging)
@@ -588,9 +583,9 @@ get_pfa_data <- function(subset = NULL,
     area_output <- data.frame() # initialise area output df
     number_months_acquired <- 0 # initialise number of months acquired counter
 
-    ###################################################
+
     #### i loop: iterates over the months required ####
-    ###################################################
+
 
     for(i in 1:num_months_backwards){
       month_output <- data.frame()
@@ -616,9 +611,9 @@ get_pfa_data <- function(subset = NULL,
 
       date <- paste(year, "-", month, sep = "") # combine dates into one string
 
-      ################
+
       #### j loop ####
-      ################
+
       # Iterates over the coordinate sets within each LA and creates a
       # polygon string to be searched, and then submits the query.
       # Most LAs have only one coordinate set, but some have multiple (e.g.,
@@ -704,9 +699,9 @@ get_pfa_data <- function(subset = NULL,
 
       }
 
-      #####################################
+
       #### End: Coordinate set loop (j) ####
-      #####################################
+
 
 
 
@@ -720,9 +715,9 @@ get_pfa_data <- function(subset = NULL,
 
     }
 
-    #############################
+
     #### End: Month loop (i) ####
-    #############################
+
 
     # If there were no records for this LA, record the LA iteration number
     # and name, then proceed to the next LA
@@ -797,9 +792,9 @@ get_pfa_data <- function(subset = NULL,
     # save(save_progress, file = "./save_progress.Rdata")
   }
 
-  ############################
+
   #### End: Area loop (h) ####
-  ############################
+
 
   # Add in area lookup
   # First just get pfas and above from lookup
@@ -871,12 +866,12 @@ get_pfa_data <- function(subset = NULL,
 #' # Get the most recent 12 months of data for all LADs.
 #' # Don't run as will take a while.
 #' df <- get_lad_data()
-#'
+#'}
 #' # Get data for a subset of LADs, only the most recent month
 #' df2 <- get_lad_data(subset = list(
 #'                       "lad22nm" = c('Haringey','Waltham Forest')),
 #'                       num_months_backwards = 1)
-#' }
+#'
 #'
 get_lad_data <- function(subset = NULL,
                          num_months_backwards = 12,
@@ -894,9 +889,9 @@ get_lad_data <- function(subset = NULL,
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
-  ########################
+
   #### Error handling ####
-  ########################
+
 
   # Make sure that user can't specify an incorrect time period
   # 1. Too many months backwards
@@ -940,21 +935,16 @@ get_lad_data <- function(subset = NULL,
     stop("Error: Time period not specified or incomplete. Either num_months_backwards or both oldest_month and oldest_year must be specified")
   }
 
-  ###########################
-  ### End: Error handling ###
-  ###########################
 
   t1 <- Sys.time()
 
-  ########################
+
   #### Get geometries ####
-  ########################
+
 
   geometries <- policedatR::get_lad_geometries(subset)
 
-  #############################
-  #### End: Get geometries ####
-  #############################
+
 
   # Initialise variables
   overall_output <- data.frame()
@@ -990,9 +980,9 @@ get_lad_data <- function(subset = NULL,
   #   }
   # }
 
-  #####################################
+
   #### h loop: iterates over areas ####
-  #####################################
+
 
   for(h in 1:nrow(geometries)){
     cat(paste0("\nStarted area ", h)) # report start (useful for debugging)
@@ -1000,9 +990,9 @@ get_lad_data <- function(subset = NULL,
     area_output <- data.frame() # initialise area output df
     number_months_acquired <- 0 # initialise number of months acquired counter
 
-    ###################################################
+
     #### i loop: iterates over the months required ####
-    ###################################################
+
 
     for(i in 1:num_months_backwards){
       month_output <- data.frame()
@@ -1028,9 +1018,9 @@ get_lad_data <- function(subset = NULL,
 
       date <- paste(year, "-", month, sep = "") # combine dates into one string
 
-      ################
+
       #### j loop ####
-      ################
+
       # Iterates over the coordinate sets within each LA and creates a
       # polygon string to be searched, and then submits the query.
       # Most LAs have only one coordinate set, but some have multiple (e.g.,
@@ -1116,9 +1106,9 @@ get_lad_data <- function(subset = NULL,
 
       }
 
-      #####################################
+
       #### End: Coordinate set loop (j) ####
-      #####################################
+
 
 
 
@@ -1132,9 +1122,9 @@ get_lad_data <- function(subset = NULL,
 
     }
 
-    #############################
+
     #### End: Month loop (i) ####
-    #############################
+
 
     # If there were no records for this LA, record the LA iteration number
     # and name, then proceed to the next LA
@@ -1208,9 +1198,9 @@ get_lad_data <- function(subset = NULL,
     # save(save_progress, file = "./save_progress.Rdata")
   }
 
-  ############################
+
   #### End: Area loop (h) ####
-  ############################
+
 
   # Add in area lookup
   # First just get msoas and above from lookup
@@ -1306,9 +1296,9 @@ get_msoa_data <- function(subset = NULL,
   policedatR::caching_check()
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
-  ########################
+
   #### Error handling ####
-  ########################
+
 
   # Make sure that user can't specify an incorrect time period
   # 1. Too many months backwards
@@ -1352,21 +1342,15 @@ get_msoa_data <- function(subset = NULL,
     stop("Error: Time period not specified or incomplete. Either num_months_backwards or both oldest_month and oldest_year must be specified")
   }
 
-  ###########################
-  ### End: Error handling ###
-  ###########################
 
   t1 <- Sys.time()
 
-  ########################
+
   #### Get geometries ####
-  ########################
 
   geometries <- policedatR::get_msoa_geometries(subset)
 
-  #############################
-  #### End: Get geometries ####
-  #############################
+
 
   # Initialise variables
   overall_output <- data.frame()
@@ -1404,9 +1388,9 @@ get_msoa_data <- function(subset = NULL,
 
 
 
-  #####################################
+
   #### h loop: iterates over areas ####
-  #####################################
+
 
   for(h in 1:nrow(geometries)){
     cat(paste0("\nStarted area ", h)) # report start (useful for debugging)
@@ -1414,9 +1398,7 @@ get_msoa_data <- function(subset = NULL,
     area_output <- data.frame() # initialise area output df
     number_months_acquired <- 0 # initialise number of months acquired counter
 
-    ###################################################
     #### i loop: iterates over the months required ####
-    ###################################################
 
     for(i in 1:num_months_backwards){
       month_output <- data.frame()
@@ -1442,9 +1424,7 @@ get_msoa_data <- function(subset = NULL,
 
       date <- paste(year, "-", month, sep = "") # combine dates into one string
 
-      ################
       #### j loop ####
-      ################
       # Iterates over the coordinate sets within each LA and creates a
       # polygon string to be searched, and then submits the query.
       # Most LAs have only one coordinate set, but some have multiple (e.g.,
@@ -1531,9 +1511,7 @@ get_msoa_data <- function(subset = NULL,
 
       }
 
-      #####################################
       #### End: Coordinate set loop (j) ####
-      #####################################
 
 
 
@@ -1547,9 +1525,7 @@ get_msoa_data <- function(subset = NULL,
 
     }
 
-    #############################
     #### End: Month loop (i) ####
-    #############################
 
     # If there were no records for this LA, record the LA iteration number
     # and name, then proceed to the next LA
@@ -1625,9 +1601,7 @@ get_msoa_data <- function(subset = NULL,
   }
 
 
-  ############################
   #### End: Area loop (h) ####
-  ############################
 
   # Add in area lookup
   # First just get msoas and above from lookup
@@ -1726,9 +1700,8 @@ get_lsoa_data <- function(subset = NULL,
   policedatR::caching_check()
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
-  ########################
+
   #### Error handling ####
-  ########################
 
   # Make sure that user can't specify an incorrect time period
   # 1. Too many months backwards
@@ -1772,21 +1745,13 @@ get_lsoa_data <- function(subset = NULL,
     stop("Error: Time period not specified or incomplete. Either num_months_backwards or both oldest_month and oldest_year must be specified")
   }
 
-  ###########################
-  ### End: Error handling ###
-  ###########################
+
 
   t1 <- Sys.time()
 
-  ########################
   #### Get geometries ####
-  ########################
 
   geometries <- policedatR::get_lsoa_geometries(subset)
-
-  #############################
-  #### End: Get geometries ####
-  #############################
 
   # Initialise variables
   overall_output <- data.frame()
@@ -1824,9 +1789,7 @@ get_lsoa_data <- function(subset = NULL,
 
 
 
-  #####################################
   #### h loop: iterates over areas ####
-  #####################################
 
   for(h in 1:nrow(geometries)){
     cat(paste0("\nStarted area ", h)) # report start (useful for debugging)
@@ -1834,9 +1797,7 @@ get_lsoa_data <- function(subset = NULL,
     area_output <- data.frame() # initialise area output df
     number_months_acquired <- 0 # initialise number of months acquired counter
 
-    ###################################################
     #### i loop: iterates over the months required ####
-    ###################################################
 
     for(i in 1:num_months_backwards){
       month_output <- data.frame()
@@ -1862,9 +1823,7 @@ get_lsoa_data <- function(subset = NULL,
 
       date <- paste(year, "-", month, sep = "") # combine dates into one string
 
-      ################
       #### j loop ####
-      ################
       # Iterates over the coordinate sets within each LA and creates a
       # polygon string to be searched, and then submits the query.
       # Most LAs have only one coordinate set, but some have multiple (e.g.,
@@ -1951,10 +1910,7 @@ get_lsoa_data <- function(subset = NULL,
 
       }
 
-      #####################################
       #### End: Coordinate set loop (j) ####
-      #####################################
-
 
 
       # If records have been acquired, increase months count
@@ -1967,9 +1923,7 @@ get_lsoa_data <- function(subset = NULL,
 
     }
 
-    #############################
     #### End: Month loop (i) ####
-    #############################
 
     # If there were no records for this LA, record the LA iteration number
     # and name, then proceed to the next LA
@@ -2045,9 +1999,7 @@ get_lsoa_data <- function(subset = NULL,
   }
 
 
-  ############################
   #### End: Area loop (h) ####
-  ############################
 
   # Add in area lookup
   # First just get msoas and above from lookup
@@ -2144,9 +2096,8 @@ get_oa_data <- function(subset = NULL,
   policedatR::caching_check()
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
-  ########################
+
   #### Error handling ####
-  ########################
 
   # Make sure that user can't specify an incorrect time period
   # 1. Too many months backwards
@@ -2190,21 +2141,14 @@ get_oa_data <- function(subset = NULL,
     stop("Error: Time period not specified or incomplete. Either num_months_backwards or both oldest_month and oldest_year must be specified")
   }
 
-  ###########################
-  ### End: Error handling ###
-  ###########################
+
 
   t1 <- Sys.time()
 
-  ########################
   #### Get geometries ####
-  ########################
 
   geometries <- policedatR::get_oa_geometries(subset)
 
-  #############################
-  #### End: Get geometries ####
-  #############################
 
   # Initialise variables
   overall_output <- data.frame()
@@ -2242,9 +2186,7 @@ get_oa_data <- function(subset = NULL,
 
 
 
-  #####################################
   #### h loop: iterates over areas ####
-  #####################################
 
   for(h in 1:nrow(geometries)){
     cat(paste0("\nStarted area ", h)) # report start (useful for debugging)
@@ -2252,9 +2194,7 @@ get_oa_data <- function(subset = NULL,
     area_output <- data.frame() # initialise area output df
     number_months_acquired <- 0 # initialise number of months acquired counter
 
-    ###################################################
     #### i loop: iterates over the months required ####
-    ###################################################
 
     for(i in 1:num_months_backwards){
       month_output <- data.frame()
@@ -2280,9 +2220,7 @@ get_oa_data <- function(subset = NULL,
 
       date <- paste(year, "-", month, sep = "") # combine dates into one string
 
-      ################
       #### j loop ####
-      ################
       # Iterates over the coordinate sets within each LA and creates a
       # polygon string to be searched, and then submits the query.
       # Most LAs have only one coordinate set, but some have multiple (e.g.,
@@ -2369,9 +2307,7 @@ get_oa_data <- function(subset = NULL,
 
       }
 
-      #####################################
       #### End: Coordinate set loop (j) ####
-      #####################################
 
 
 
@@ -2385,9 +2321,7 @@ get_oa_data <- function(subset = NULL,
 
     }
 
-    #############################
     #### End: Month loop (i) ####
-    #############################
 
     # If there were no records for this LA, record the LA iteration number
     # and name, then proceed to the next LA
@@ -2463,9 +2397,7 @@ get_oa_data <- function(subset = NULL,
   }
 
 
-  ############################
   #### End: Area loop (h) ####
-  ############################
 
   # Add in area lookup
   # First just get msoas and above from lookup
