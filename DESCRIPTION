@@ -21,7 +21,6 @@ Imports:
     sf,
     stringr,
     tibble,
-    broom,
     epitools,
     forcats,
     purrr,
