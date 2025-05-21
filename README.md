@@ -81,4 +81,4 @@ The output will be a dataframe containing the counts and rates per population by
 
 Data acquired using policedatR is published by data.police.uk under [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)
 
-policedatR makes use of lookups and boundary data from the Office for National Statistics [Open Geography Portal](https://geoportal.statistics.gov.uk/). These data are also licenced [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)
+policedatR makes use of lookups and boundary data [Open Geography Portal](https://geoportal.statistics.gov.uk/) and Census 2021 population estimates (acquired via [NOMIS](https://www.nomisweb.co.uk/)) from the Office for National Statistics. These data are also licenced [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)
