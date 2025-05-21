@@ -62,7 +62,7 @@ get_region_geometries <- function(subset = NULL){
     sf::st_read(geojson_data, quiet = TRUE) %>%
       # Tidy up
       janitor::clean_names() %>%
-      dplyr::select(ends_with("cd"), ends_with("nm"), shape_area, geometry)
+      dplyr::select(dplyr::ends_with("cd"), dplyr::ends_with("nm"), shape_area, geometry)
 
   }
 
@@ -171,7 +171,7 @@ get_pfa_geometries <- function(subset = NULL){
     sf::st_read(geojson_data, quiet = TRUE) %>%
       # Tidy up
       janitor::clean_names() %>%
-      dplyr::select(ends_with("cd"), ends_with("nm"), shape_area, geometry)
+      dplyr::select(dplyr::ends_with("cd"), dplyr::ends_with("nm"), shape_area, geometry)
 
   }
 
@@ -453,7 +453,7 @@ get_msoa_geometries <- function(subset = NULL){
   tidy_geometries <- function(data) {
     data %>%
       janitor::clean_names() %>%
-      dplyr::select(ends_with("cd"), ends_with("nm"), shape_area, geometry)
+      dplyr::select(dplyr::ends_with("cd"), dplyr::ends_with("nm"), shape_area, geometry)
   }
 
   t1 <- Sys.time()
@@ -626,7 +626,7 @@ get_lsoa_geometries <- function(subset = NULL){
   tidy_geometries <- function(data) {
     data %>%
       janitor::clean_names() %>%
-      dplyr::select(ends_with("cd"), ends_with("nm"), shape_area, geometry)
+      dplyr::select(dplyr::ends_with("cd"), dplyr::ends_with("nm"), shape_area, geometry)
   }
 
 
