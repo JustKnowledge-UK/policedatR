@@ -209,6 +209,7 @@ calculate_riskratio <- function(data,
     period <- length(dates)
   }
 
+  data <- create_periods(data, period)
   area_variable <- colnames(data)[1]
   all_area_variables <- colnames(data)[1:which(colnames(data) == "rgn22nm")]
   remaining_area_variables <- colnames(data)[2:which(colnames(data) == "rgn22nm")]
