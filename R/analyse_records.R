@@ -192,7 +192,22 @@ calculate_riskratio <- function(data,
                                 ethnicity_definition,
                                 collapse_ethnicity,
                                 comparison = c("white","black"),
-                                period = 12){
+                                period = NULL,
+                                within_areas = TRUE){
+
+  # If period is NULL, set it to the total number of months present in data
+  if(is.null(period)){
+    # Make year_month variable
+    data <- process_dates(data)
+    # Get a list of unique year_month combos and order them
+    date_set <- unique(data$year_month)
+    date_set <- date_set[!is.na(date_set)]
+    dates <- date_set[order(date_set)]
+    # Get length of dates
+    length_dates <- length(dates)
+    # Set period
+    period <- length(dates)
+  }
 
   area_variable <- colnames(data)[1]
   all_area_variables <- colnames(data)[1:which(colnames(data) == "rgn22nm")]
@@ -201,10 +216,20 @@ calculate_riskratio <- function(data,
   population_ests <- policedatR::get_population_estimates(data, collapse_ethnicity)
 
   # Get the count data
-  summarised_data <- policedatR::analyse_anything(data, c("area","period","ethnicity"),
-                                                  ethnicity_definition = ethnicity_definition,
-                                                  collapse_ethnicity = collapse_ethnicity,
-                                                  period = period) %>%
+  if(within_areas){
+    summarised_data <- policedatR::analyse_anything(data, c("area","period","ethnicity"),
+                                                    ethnicity_definition = ethnicity_definition,
+                                                    collapse_ethnicity = collapse_ethnicity,
+                                                    period = period)
+  }
+  else{
+    summarised_data <- policedatR::analyse_anything(data, c("period","ethnicity"),
+                                                    ethnicity_definition = ethnicity_definition,
+                                                    collapse_ethnicity = collapse_ethnicity,
+                                                    period = period)
+  }
+
+  summarised_data <- summarised_data %>%
     dplyr::full_join(population_ests, by = c(area_variable, "ethnicity")) %>%
     dplyr::rename(
       stopped = n
