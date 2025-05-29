@@ -54,6 +54,36 @@ period_is_factor <- function(period, length_dates){
   return(check)
 }
 
+# Process dates into year-month format
+#
+# Process date and create a year_month variable
+#
+# @param data A tibble of stop data acquired using policedatR
+#
+# @returns A mutated version of data which contains a formatted year_month variable.
+# @keywords internal
+#
+# @examples
+
+process_dates <- function(data){
+  # Prepare the dates for the period check
+  # separate date into separate columns
+  data$year <- as.numeric(substr(data$datetime, 1, 4))
+  data$month <- as.numeric(substr(data$datetime, 6, 7))
+  data$day <- as.numeric(substr(data$datetime, 9, 10))
+
+  # make year_month variable for indexing - na problems here?
+  data <- data %>%
+    dplyr::mutate(
+      year_month = dplyr::if_else(!is.na(year),
+                                  as.Date(paste(
+                                    as.character(data$year),
+                                    as.character(data$month),"01", sep= "-"), format = "%Y-%m-%d"), NA)
+    )
+
+  return(data)
+
+}
 
 # Create analysis periods from date
 #
@@ -73,18 +103,7 @@ period_is_factor <- function(period, length_dates){
 create_periods <- function(data, period){
   # Prepare the dates for the period check
   # separate date into separate columns
-  data$year <- as.numeric(substr(data$datetime, 1, 4))
-  data$month <- as.numeric(substr(data$datetime, 6, 7))
-  data$day <- as.numeric(substr(data$datetime, 9, 10))
-
-  # make year_month variable for indexing - na problems here?
-  data <- data %>%
-    dplyr::mutate(
-      year_month = dplyr::if_else(!is.na(year),
-                                  as.Date(paste(
-                                    as.character(data$year),
-                                    as.character(data$month),"01", sep= "-"), format = "%Y-%m-%d"), NA)
-    )
+  data <- process_dates(data)
 
   # Get a list of unique year_month combos and order them
   date_set <- unique(data$year_month)
