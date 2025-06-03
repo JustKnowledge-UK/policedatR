@@ -160,6 +160,13 @@ analyse_anything <- function(data,
 #' ethnicities for each area and period.
 #' @param data A tibble of stop data acquired using policedatR. The first column
 #' must be the area code variable of the geography of interest (e.g. 'lad22cd').
+#' @param analysis_variables A character vector of variables to be used
+#' as grouping variables when counting. Order is important. Variables are nested
+#' from left to right; the first element is the highest grouping level and the
+#' final element is the lowest grouping level. Percentage denominators are the
+#' sum of counts within the final grouping level. Valid values are: area, ethnicity,
+#' period, object, outcome, age, gender, legislation. Use `show_analysis_variables()`
+#' to see these values and brief explanation of to what they refer. See details for more info.
 #' @param ethnicity_definition String specifying which ethnicity definition to use
 #' for counts. 'self' has the possibility of using the 18 disaggregated categories but is likely
 #' to have more NAs than 'officer'. 'officer' is only the 5 aggregated ethnicity categories and
@@ -189,11 +196,11 @@ analyse_anything <- function(data,
 #'                                      comparison = c("white","black"),
 #'                                      period = 12)
 calculate_riskratio <- function(data,
+                                analysis_variables = c("area","period","ethnicity"),
                                 ethnicity_definition,
                                 collapse_ethnicity,
                                 comparison = c("white","black"),
-                                period = NULL,
-                                within_areas = TRUE){
+                                period = NULL){
 
   # If period is NULL, set it to the total number of months present in data
   if(is.null(period)){
@@ -217,20 +224,11 @@ calculate_riskratio <- function(data,
   population_ests <- policedatR::get_population_estimates(data, collapse_ethnicity)
 
   # Get the count data
-  if(within_areas){
-    summarised_data <- policedatR::analyse_anything(data, c("area","period","ethnicity"),
-                                                    ethnicity_definition = ethnicity_definition,
-                                                    collapse_ethnicity = collapse_ethnicity,
-                                                    period = period)
-  }
-  else{
-    summarised_data <- policedatR::analyse_anything(data, c("period","ethnicity"),
-                                                    ethnicity_definition = ethnicity_definition,
-                                                    collapse_ethnicity = collapse_ethnicity,
-                                                    period = period)
-  }
-
-  summarised_data <- summarised_data %>%
+  summarised_data <- policedatR::analyse_anything(data,
+                                                  analysis_variables = analysis_variables,
+                                                  ethnicity_definition = ethnicity_definition,
+                                                  collapse_ethnicity = collapse_ethnicity,
+                                                  period = period)  %>%
     dplyr::full_join(population_ests, by = c(area_variable, "ethnicity")) %>%
     dplyr::rename(
       stopped = n
