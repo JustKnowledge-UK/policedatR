@@ -6,15 +6,24 @@
 \usage{
 calculate_riskratio(
   data,
+  analysis_variables = c("area", "period", "ethnicity"),
   ethnicity_definition,
   collapse_ethnicity,
   comparison = c("white", "black"),
-  period = 12
+  period = NULL
 )
 }
 \arguments{
 \item{data}{A tibble of stop data acquired using policedatR. The first column
 must be the area code variable of the geography of interest (e.g. 'lad22cd').}
+
+\item{analysis_variables}{A character vector of variables to be used
+as grouping variables when counting. Order is important. Variables are nested
+from left to right; the first element is the highest grouping level and the
+final element is the lowest grouping level. Percentage denominators are the
+sum of counts within the final grouping level. Valid values are: area, ethnicity,
+period, object, outcome, age, gender, legislation. Use \code{show_analysis_variables()}
+to see these values and brief explanation of to what they refer. See details for more info.}
 
 \item{ethnicity_definition}{String specifying which ethnicity definition to use
 for counts. 'self' has the possibility of using the 18 disaggregated categories but is likely
