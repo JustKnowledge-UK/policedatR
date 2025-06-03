@@ -216,20 +216,56 @@ calculate_riskratio <- function(data,
     period <- length(dates)
   }
 
+  # Preliminaries
   data <- create_periods(data, period)
   area_variable <- colnames(data)[1]
   all_area_variables <- colnames(data)[1:which(colnames(data) == "rgn22nm")]
   remaining_area_variables <- colnames(data)[2:which(colnames(data) == "rgn22nm")]
 
+  # Create a mapping between the input arguments and the data variables
+  groups_map <- list(
+    "area" = area_variable,
+    "ethnicity" = "ethnicity",
+    "period" = "period",
+    "object" = "object_of_search",
+    "outcome" = "outcome",
+    "age" = "age_range",
+    "gender" = "gender",
+    "legislation" = "legislation"
+  )
+
+  # Get an unnamed character vector of the actual variable names using
+  # the mapping to translate user inputs into variables
+  analysis_variables2 <- unname(unlist(groups_map[analysis_variables]))
+
   population_ests <- policedatR::get_population_estimates(data, collapse_ethnicity)
+
+  # If area is not specified in analysis_variables, sum the population counts
+  # to give the overall count across areas.
+  if(!("area" %in% analysis_variables)){
+    population_ests <- population_ests %>%
+      dplyr::group_by(ethnicity) %>%
+      dplyr::summarise(
+        population = sum(population)
+      ) %>%
+      dplyr::ungroup()
+  }
 
   # Get the count data
   summarised_data <- policedatR::analyse_anything(data,
                                                   analysis_variables = analysis_variables,
                                                   ethnicity_definition = ethnicity_definition,
                                                   collapse_ethnicity = collapse_ethnicity,
-                                                  period = period)  %>%
-    dplyr::full_join(population_ests, by = c(area_variable, "ethnicity")) %>%
+                                                  period = period)
+
+  # Specify the variables on which to join the summarized data to the population
+  # estimates. If area is included in analysis variables then population estimates
+  # by area should be joined. If it's not, we just join by ethnicity.
+  join_vars <- ifelse("area" %in% analysis_variables, c(area_variable, "ethnicity"),
+                      "ethnicity")
+
+  summarised_data <- summarised_data %>%
+    dplyr::full_join(population_ests, by = join_vars) %>%
     dplyr::rename(
       stopped = n
     ) %>%
@@ -237,6 +273,7 @@ calculate_riskratio <- function(data,
       not_stopped = population - stopped,
       stop_rate_per_1000 = 1000 * (stopped / population)
     )
+
 
   # If comparison isn't specified, help user choose by listing categories
   # Note management needed here to ensure correct inputs.
@@ -262,35 +299,50 @@ calculate_riskratio <- function(data,
       ethnicity = factor(ethnicity, levels = comparison)
     )
 
+  # Define variables for grouping. This should be everything in analysis variables
+  # except ethnicity
+  grouping_vars <- analysis_variables2[which(!(analysis_variables2 %in% "ethnicity"))]
+
+  # Wrap the risk_ratio function in a modified version that captures warnings
+  # so we can record where chi-square warnings occur
+  riskratio_safe <- purrr::quietly(riskratio_from_df)
+
   # Run the risk ratio
   rr_results <- temp_df %>%
-    dplyr::group_by(!!rlang::sym(area_variable), period) %>%
-    dplyr::filter(dplyr::n_distinct(ethnicity) == 2) %>%   # ensure two unique ethnicities per group
-    dplyr::select(!!rlang::sym(area_variable), period, ethnicity, not_stopped, stopped) %>%
+    dplyr::group_by(!!!rlang::syms(grouping_vars)) %>%
+    # dplyr::filter(dplyr::n_distinct(ethnicity) == 2) %>%   # ensure two unique ethnicities per group
+    dplyr::select(!!!rlang::syms(analysis_variables2), not_stopped, stopped) %>%
     tidyr::nest() %>%
     dplyr::mutate(
       # First ensure ethnicity_1 is the first row
       data = purrr::map(data, ~ .x %>% dplyr::arrange(dplyr::desc(ethnicity == ethnicity_1))),
+      rr_result = purrr::map(data, riskratio_safe),
       # Then run risk ratio
-      rr_info = purrr::map(data, riskratio_from_df)) %>%
+      rr_info = purrr::map(rr_result, "result"),
+      warning = purrr::map_chr(rr_result, ~ ifelse(length(.x$warnings) > 0, paste(.x$warnings, collapse = "; "), NA_character_))
+    ) %>%
     tidyr::unnest(rr_info) %>%
-    dplyr::select(-data)
+    dplyr::select(-c(data, rr_result))
 
   # Widen original data and join rr to it
   complete_data <- temp_df %>%
-    tidyr::pivot_wider(id_cols = c(!!rlang::sym(area_variable), period), names_from = ethnicity, values_from = c(stopped,population,stop_rate_per_1000)) %>%
-    dplyr::left_join(rr_results, by = c(area_variable,"period"))
+    tidyr::pivot_wider(id_cols = c(!!!rlang::syms(grouping_vars)), names_from = ethnicity, values_from = c(stopped,population,stop_rate_per_1000)) %>%
+    dplyr::left_join(rr_results, by = grouping_vars)
 
-  # Add in the other area variables
-  all_areas <- area_lookup %>%
-    dplyr::select(dplyr::all_of(all_area_variables)) %>%
-    dplyr::distinct()
 
-  # Join area variables to data and locate them sensibly
-  complete_data <- complete_data %>%
-    dplyr::left_join(all_areas, by = area_variable) %>%
-    # Locate the area variables at the left of the dataframe
-    dplyr::relocate(dplyr::all_of(remaining_area_variables), .after = area_variable)
+  # If area is specified, join the other area variables to complete_data
+  if("area" %in% analysis_variables){
+    # Add in the other area variables
+    all_areas <- area_lookup %>%
+      dplyr::select(dplyr::all_of(all_area_variables)) %>%
+      dplyr::distinct()
+
+    # Join area variables to data and locate them sensibly
+    complete_data <- complete_data %>%
+      dplyr::left_join(all_areas, by = area_variable) %>%
+      # Locate the area variables at the left of the dataframe
+      dplyr::relocate(dplyr::all_of(remaining_area_variables), .after = area_variable)
+  }
 
   return(complete_data)
 
