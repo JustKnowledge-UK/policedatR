@@ -108,8 +108,8 @@ analyse_anything <- function(data,
   }
 
   # Create a period variable based on the value of period
-  # Only if period is asked for
-  if("period" %in% analysis_variables){
+  # Only if period is asked for AND it doesn't already exist (e.g. from calculate_riskratio processing)
+  if("period" %in% analysis_variables & !("period" %in% colnames(data))){
     data <- create_periods(data, period)
   }
 
@@ -121,6 +121,7 @@ analyse_anything <- function(data,
   analysis_variables2 <- result$analysis_variables2
 
   #### Analysis ####
+
 
   # Count the stops
   summarised_data <- data %>%
@@ -258,11 +259,19 @@ calculate_riskratio <- function(data,
                                                   collapse_ethnicity = collapse_ethnicity,
                                                   period = period)
 
+
+
   # Specify the variables on which to join the summarized data to the population
   # estimates. If area is included in analysis variables then population estimates
   # by area should be joined. If it's not, we just join by ethnicity.
-  join_vars <- ifelse("area" %in% analysis_variables, c(area_variable, "ethnicity"),
-                      "ethnicity")
+  # join_vars <- ifelse("area" %in% analysis_variables, c(area_variable, "ethnicity"),
+  #                     "ethnicity")
+
+  if("area" %in% analysis_variables){
+    join_vars <- c(area_variable, "ethnicity")
+  } else{
+    join_vars <- "ethnicity"
+  }
 
   summarised_data <- summarised_data %>%
     dplyr::full_join(population_ests, by = join_vars) %>%
@@ -273,7 +282,6 @@ calculate_riskratio <- function(data,
       not_stopped = population - stopped,
       stop_rate_per_1000 = 1000 * (stopped / population)
     )
-
 
   # If comparison isn't specified, help user choose by listing categories
   # Note management needed here to ensure correct inputs.
@@ -302,6 +310,7 @@ calculate_riskratio <- function(data,
   # Define variables for grouping. This should be everything in analysis variables
   # except ethnicity
   grouping_vars <- analysis_variables2[which(!(analysis_variables2 %in% "ethnicity"))]
+
 
   # Wrap the risk_ratio function in a modified version that captures warnings
   # so we can record where chi-square warnings occur
