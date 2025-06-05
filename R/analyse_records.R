@@ -58,6 +58,7 @@ analyse_anything <- function(data,
     # Get area variable code from first column
     area_variable <- colnames(data)[1]
 
+
     # Create a mapping between the input arguments and the data variables
     groups_map <- list(
       "area" = area_variable,
@@ -92,6 +93,10 @@ analyse_anything <- function(data,
       all_combinations = all_combinations)
     )
   }
+
+  area_variable <- colnames(data)[1]
+  all_area_variables <- colnames(data)[1:which(colnames(data) == "rgn22nm")]
+  remaining_area_variables <- colnames(data)[2:which(colnames(data) == "rgn22nm")]
 
 
   # Process ethnicity. This creates nice names based on population estimates
@@ -148,6 +153,20 @@ analyse_anything <- function(data,
     ) %>%
     # Make order the same as grouping - this was lost in the left_join above
     dplyr::arrange(!!!rlang::syms(analysis_variables2[-length(analysis_variables2)]))
+
+  # If area is specified, join the other area variables to complete_data
+  if("area" %in% analysis_variables){
+    # Add in the other area variables
+    all_areas <- area_lookup %>%
+      dplyr::select(dplyr::all_of(all_area_variables)) %>%
+      dplyr::distinct()
+
+    # Join area variables to data and locate them sensibly
+    complete_data <- complete_data %>%
+      dplyr::left_join(all_areas, by = area_variable) %>%
+      # Locate the area variables at the left of the dataframe
+      dplyr::relocate(dplyr::all_of(remaining_area_variables), .after = area_variable)
+  }
 
   return(complete_data)
 }
@@ -355,5 +374,5 @@ calculate_riskratio <- function(data,
 
   return(complete_data)
 
-  }
+}
 
