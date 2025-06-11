@@ -17,6 +17,7 @@ period_is_factor <- function(period, length_dates){
     stop(paste0("Period cannot be longer than the total number of months in data (",length_dates,"). Please choose a period less than or equal to the total number of months in data."))
   }
   else{
+    cat(paste0("\nAnalysing in ",period,"-month periods."))
     if(length_dates %% period != 0){
       factors <- c()
       for(i in 1:length_dates){
@@ -28,30 +29,13 @@ period_is_factor <- function(period, length_dates){
       cat("\nWarning: Requested period is not a factor of the total number of months in data. Your last period will have fewer months.")
       cat("\nThese periods are factors and might be better: ")
       cat(factors)
-      repeat{
-        check <- readline("Enter the period you would like to continue with: ")
-        check <- as.numeric(check)
-        if(check > length_dates){
-          cat("\nPlease choose a period less than or equal to the total number of months in data.")
-          cat("\nThese periods are factors and would be suitable: ")
-          cat(factors)
-        }
-        else{
-          cat(paste0("Continuing with ", check, "-month periods."))
-          break
-        }
-      }
     }
     else{
       if(period == length_dates){
         cat(paste0("\nAnalysing across all months in data (",period,") as one."))
       }
-      check <- period
     }
-
   }
-
-  return(check)
 }
 
 # Process dates into year-month format
