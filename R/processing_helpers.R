@@ -98,12 +98,11 @@ create_periods <- function(data, period){
   length_dates <- length(dates)
 
   # Run the period check
-  period <- period_is_factor(period, length_dates)
+  period_is_factor(period, length_dates)
 
   # Split the dates into time periods based on the number of months
   # over which to summarise the data
   date_unit <- split(dates, ceiling(seq_along(dates) / period))
-
 
   # Name the elements of the list based on the oldest and newest month present in it
   names(date_unit) <- lapply(date_unit, function(x) if(period == 1) as.character(as.Date(min(x))) else paste0(min(x),"_to_",max(x)))
