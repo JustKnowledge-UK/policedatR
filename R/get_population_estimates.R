@@ -24,10 +24,10 @@
 #'
 #' population_estimates <- get_population_estimates(df, collapse_ethnicity = TRUE)
 #'
-get_population_estimates <- function(data, collapse_ethnicity){
+get_population_estimates <- function(data, collapse_ethnicity, cache = TRUE){
 
   # Set up caching
-  policedatR::caching_check()
+  policedatR::caching_check(cache)
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 

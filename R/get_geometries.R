@@ -29,7 +29,8 @@
 #' subset_geometries <- get_region_geometries(subset = list("lad22nm" = "Haringey"))
 #'
 #'
-get_region_geometries <- function(subset = NULL){
+get_region_geometries <- function(subset = NULL,
+                                  cache = TRUE){
 
   # Initialise and specify parameters
 
@@ -41,7 +42,7 @@ get_region_geometries <- function(subset = NULL){
   target_variable <- "RGN22CD"
 
   # Create cache directory - but ask user to agree
-  policedatR::caching_check()
+  policedatR::caching_check(cache)
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
@@ -140,7 +141,8 @@ get_region_geometries <- function(subset = NULL){
 #' subset_geometries <- get_lad_geometries(subset = list("lad22nm" = "Haringey"))
 #'
 #'
-get_pfa_geometries <- function(subset = NULL){
+get_pfa_geometries <- function(subset = NULL,
+                               cache = TRUE){
 
   # API endpoint
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Police_Force_Areas_December_2022_EW_BFC/FeatureServer/0/query"
@@ -150,7 +152,7 @@ get_pfa_geometries <- function(subset = NULL){
   target_variable <- "PFA22CD"
 
   # Create cache directory - but ask user to agree
-  policedatR::caching_check()
+  policedatR::caching_check(cache)
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
@@ -250,7 +252,8 @@ get_pfa_geometries <- function(subset = NULL){
 #' # Get just Haringey and Lambeth geometries using 'lad22cd' variable
 #' subset_geometries <- get_lad_geometries(subset = list("lad22cd" = c("E09000014", "E09000022")))
 #'
-get_lad_geometries <- function(subset = NULL){
+get_lad_geometries <- function(subset = NULL,
+                               cache = TRUE){
 
   # API endpoint
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Local_Authority_Districts_December_2022_UK_BFC_V2/FeatureServer/0/query"
@@ -262,7 +265,7 @@ get_lad_geometries <- function(subset = NULL){
   target_variable <- "LAD22CD"
 
   # Create cache directory - but ask user to agree
-  policedatR::caching_check()
+  policedatR::caching_check(cache)
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
@@ -418,7 +421,8 @@ get_lad_geometries <- function(subset = NULL){
 #'                 subset = list("lad22nm" = c("Haringey", "Waltham Forest")))
 #'
 #'
-get_msoa_geometries <- function(subset = NULL){
+get_msoa_geometries <- function(subset = NULL,
+                                cache = TRUE){
 
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Middle_layer_Super_Output_Areas_December_2021_Boundaries_EW_BFC_V7/FeatureServer/0/query"
   result_offset <- 0 # We may want the user to be able specify this
@@ -429,7 +433,7 @@ get_msoa_geometries <- function(subset = NULL){
   target_variable <- "MSOA21CD"
 
   # Create cache directory - but ask user to agree
-  policedatR::caching_check()
+  policedatR::caching_check(cache)
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
@@ -591,7 +595,8 @@ get_msoa_geometries <- function(subset = NULL){
 #'                 )
 #'
 #'
-get_lsoa_geometries <- function(subset = NULL){
+get_lsoa_geometries <- function(subset = NULL,
+                                cache = TRUE){
 
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Lower_layer_Super_Output_Areas_December_2021_Boundaries_EW_BFC_V10/FeatureServer/0/query"
   result_offset <- 0 # We may want the user to be able specify this
@@ -602,7 +607,7 @@ get_lsoa_geometries <- function(subset = NULL){
   target_variable <- "LSOA21CD"
 
   # Create cache directory - but ask user to agree
-  policedatR::caching_check()
+  policedatR::caching_check(cache)
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
@@ -762,7 +767,8 @@ get_lsoa_geometries <- function(subset = NULL){
 #' haringey_oas <- get_oa_geometries(subset = list("lad22nm" = "Haringey"))
 #'
 #'
-get_oa_geometries <- function(subset = NULL){
+get_oa_geometries <- function(subset = NULL,
+                              cache = TRUE){
 
   api_endpoint <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Output_Areas_2021_EW_BFC_V8/FeatureServer/0/query"
   result_offset <- 0 # We may want the user to be able specify this
@@ -773,7 +779,7 @@ get_oa_geometries <- function(subset = NULL){
   target_variable <- "OA21CD"
 
   # Create cache directory - but ask user to agree
-  policedatR::caching_check()
+  policedatR::caching_check(cache)
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
