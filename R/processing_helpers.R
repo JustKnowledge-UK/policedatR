@@ -304,13 +304,14 @@ riskratio_from_df <- function(df){
   mat <- df %>%
     dplyr::select(-ethnicity) %>%
     as.matrix()
-
+  # browser()
   rr <- epitools::riskratio(mat) # run
 
   # output into formatted data frame
   df_out <- data.frame("rr" = rr[["measure"]][2,1],
                        "ci_low" = rr[["measure"]][2,2],
-                       "ci_upp" = rr[["measure"]][2,3])
+                       "ci_upp" = rr[["measure"]][2,3],
+                       "p" = rr[["p.value"]][2,2]) # this is fisher.exact p.value
   return(df_out)
 }
 
