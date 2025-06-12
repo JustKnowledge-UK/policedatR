@@ -139,17 +139,47 @@ analyse_anything <- function(data,
     ) %>%
     dplyr::ungroup()
 
+  # Add in the population estimates
+  population_ests <- policedatR::get_population_estimates(data, collapse_ethnicity)
 
+  # If area is not specified in analysis_variables, sum the population counts
+  # to give the overall count across areas.
+  if(!("area" %in% analysis_variables)){
+    population_ests <- population_ests %>%
+      dplyr::group_by(ethnicity) %>%
+      dplyr::summarise(
+        population = sum(population)
+      ) %>%
+      dplyr::ungroup()
+  }
+
+  # Specify the variables on which to join the summarized data to the population
+  # estimates. If area is included in analysis variables then population estimates
+  # by area should be joined. If it's not, we just join by ethnicity.
+  # join_vars <- ifelse("area" %in% analysis_variables, c(area_variable, "ethnicity"),
+  #                     "ethnicity")
+
+  default_join_vars <- c(area_variable, "ethnicity")
+  join_vars <- analysis_variables2[which(analysis_variables2 %in% default_join_vars)]
+
+  summarised_data <- summarised_data %>%
+    dplyr::full_join(population_ests, by = join_vars) %>%
+    dplyr::rename(
+      stopped = n
+    ) %>%
+    dplyr::mutate(
+      stop_rate_per_1000 = 1000 * (stopped / population)
+    )
 
   # Join counts with expanded grid. This will create NAs where no data in stops
   # to then be converted to 0s.
   complete_data <- all_combinations %>%
     dplyr::left_join(summarised_data, by = analysis_variables2) %>%
     dplyr::mutate(
-      # Make NAs for n and percentage 0 - this is safe as NAs are a result of the left_join which
+      # Make NAs for stopped and percentage 0 - this is safe as NAs are a result of the left_join which
       # flags the combinations that weren't counted in the summarise step because
       # they didn't exist
-      dplyr::across(c(n, percentage), ~ ifelse(is.na(.), 0, .))
+      dplyr::across(c(stopped, percentage), ~ ifelse(is.na(.), 0, .))
     ) %>%
     # Make order the same as grouping - this was lost in the left_join above
     dplyr::arrange(!!!rlang::syms(analysis_variables2[-length(analysis_variables2)]))
@@ -167,6 +197,8 @@ analyse_anything <- function(data,
       # Locate the area variables at the left of the dataframe
       dplyr::relocate(dplyr::all_of(remaining_area_variables), .after = area_variable)
   }
+
+
 
   return(complete_data)
 }
@@ -276,30 +308,10 @@ calculate_riskratio <- function(data,
                                                   analysis_variables = analysis_variables,
                                                   ethnicity_definition = ethnicity_definition,
                                                   collapse_ethnicity = collapse_ethnicity,
-                                                  period = period)
-
-
-
-  # Specify the variables on which to join the summarized data to the population
-  # estimates. If area is included in analysis variables then population estimates
-  # by area should be joined. If it's not, we just join by ethnicity.
-  # join_vars <- ifelse("area" %in% analysis_variables, c(area_variable, "ethnicity"),
-  #                     "ethnicity")
-
-  if("area" %in% analysis_variables){
-    join_vars <- c(area_variable, "ethnicity")
-  } else{
-    join_vars <- "ethnicity"
-  }
-
-  summarised_data <- summarised_data %>%
-    dplyr::full_join(population_ests, by = join_vars) %>%
-    dplyr::rename(
-      stopped = n
-    ) %>%
+                                                  period = period) %>%
+  # Calculate not stopped ready for riskratio calculation
     dplyr::mutate(
-      not_stopped = population - stopped,
-      stop_rate_per_1000 = 1000 * (stopped / population)
+      not_stopped = population - stopped
     )
 
   # If comparison isn't specified, help user choose by listing categories
