@@ -304,14 +304,29 @@ riskratio_from_df <- function(df){
   mat <- df %>%
     dplyr::select(-ethnicity) %>%
     as.matrix()
-  # browser()
-  rr <- epitools::riskratio(mat) # run
+
+  # Use tryCatch to handle errors
+  rr <- tryCatch({
+    epitools::riskratio(mat)
+  }, error = function(e) {
+    # Return NULL if there's an error
+    return(NULL)
+  })
+
+  if(is.null(rr)){
+    # Return NA values if riskratio failed
+    df_out <- data.frame("rr" = NA_real_,
+                         "ci_low" = NA_real_,
+                         "ci_upp" = NA_real_,
+                         "p" = NA_real_)
+  } else {
 
   # output into formatted data frame
-  df_out <- data.frame("rr" = rr[["measure"]][2,1],
-                       "ci_low" = rr[["measure"]][2,2],
-                       "ci_upp" = rr[["measure"]][2,3],
-                       "p" = rr[["p.value"]][2,2]) # this is fisher.exact p.value
+    df_out <- data.frame("rr" = rr[["measure"]][2,1],
+                         "ci_low" = rr[["measure"]][2,2],
+                         "ci_upp" = rr[["measure"]][2,3],
+                         "p" = rr[["p.value"]][2,2]) # this is fisher.exact p.value
+  }
   return(df_out)
 }
 
