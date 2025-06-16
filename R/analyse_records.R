@@ -44,8 +44,8 @@
 
 analyse_anything <- function(data,
                              analysis_variables,
-                             ethnicity_definition,
-                             collapse_ethnicity,
+                             ethnicity_definition = "self",
+                             collapse_ethnicity = TRUE,
                              period = 12){
 
   #### Helpers ####
