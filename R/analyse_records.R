@@ -144,23 +144,49 @@ analyse_anything <- function(data,
 
   # If area is not specified in analysis_variables, sum the population counts
   # to give the overall count across areas.
+  # If area is not required...
   if(!("area" %in% analysis_variables)){
-    population_ests <- population_ests %>%
-      dplyr::group_by(ethnicity) %>%
-      dplyr::summarise(
-        population = sum(population)
-      ) %>%
-      dplyr::ungroup()
+    # ... if ethnicity is required, sum within each ethnicity
+    if("ethnicity" %in% analysis_variables){
+      population_ests <- population_ests %>%
+        dplyr::group_by(ethnicity) %>%
+        dplyr::summarise(
+          population = sum(population)
+        ) %>%
+        dplyr::ungroup()
+    }
+    # ... if ethnicity isn't required, sum across ethnicities
+    else if(!("ethnicity" %in% analysis_variables)){
+      population_ests <- population_ests %>%
+        dplyr::summarise(
+          population = sum(population)
+        ) %>%
+        dplyr::ungroup()
+    }
   }
+  # If area is required...
+  else{
+    # ... if ethnicity is not required, sum within each area
+    if(!("ethnicity" %in% analysis_variables)){
+      population_ests <- population_ests %>%
+        dplyr::group_by(!!!rlang::syms(area_variable)) %>%
+        dplyr::summarise(
+          population = sum(population)
+        ) %>%
+        dplyr::ungroup()
+    }
+  }
+
 
   # Specify the variables on which to join the summarized data to the population
   # estimates. If area is included in analysis variables then population estimates
   # by area should be joined. If it's not, we just join by ethnicity.
   # join_vars <- ifelse("area" %in% analysis_variables, c(area_variable, "ethnicity"),
   #                     "ethnicity")
-
   default_join_vars <- c(area_variable, "ethnicity")
+
   join_vars <- analysis_variables2[which(analysis_variables2 %in% default_join_vars)]
+
 
   summarised_data <- summarised_data %>%
     dplyr::full_join(population_ests, by = join_vars) %>%
