@@ -57,13 +57,14 @@ process_dates <- function(data){
   data$day <- as.numeric(substr(data$datetime, 9, 10))
 
   # make year_month variable for indexing - na problems here?
-  data <- data %>%
-    dplyr::mutate(
-      year_month = dplyr::if_else(!is.na(year),
-                                  as.Date(paste(
-                                    as.character(data$year),
-                                    as.character(data$month),"01", sep= "-"), format = "%Y-%m-%d"), NA)
-    )
+  # This is redundant now that year_month is applied at extraction
+  # data <- data %>%
+  #   dplyr::mutate(
+  #     year_month = dplyr::if_else(!is.na(year),
+  #                                 as.Date(paste(
+  #                                   as.character(data$year),
+  #                                   as.character(data$month),"01", sep= "-"), format = "%Y-%m-%d"), NA)
+  #   )
 
   return(data)
 
