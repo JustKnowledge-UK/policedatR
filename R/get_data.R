@@ -305,6 +305,12 @@ get_region_data <- function(subset = NULL,
         number_months_acquired <- number_months_acquired + 1
       }
 
+      month_output <- month_output %>%
+        dplyr::mutate(
+          year_month = as.Date(paste(date,"01", sep= "-"), format = "%Y-%m-%d")
+        ) %>%
+        dplyr::relocate(year_month, .before = everything())
+
       # Add data from this month (i) to overall area output (h)
       area_output <- dplyr::bind_rows(area_output, month_output)
 
@@ -711,6 +717,12 @@ get_pfa_data <- function(subset = NULL,
       if(nrow(month_output) > 0){
         number_months_acquired <- number_months_acquired + 1
       }
+
+      month_output <- month_output %>%
+        dplyr::mutate(
+          year_month = as.Date(paste(date,"01", sep= "-"), format = "%Y-%m-%d")
+        ) %>%
+        dplyr::relocate(year_month, .before = everything())
 
       # Add data from this month (i) to overall area output (h)
       area_output <- dplyr::bind_rows(area_output, month_output)
@@ -1120,6 +1132,12 @@ get_lad_data <- function(subset = NULL,
         number_months_acquired <- number_months_acquired + 1
       }
 
+      month_output <- month_output %>%
+        dplyr::mutate(
+          year_month = as.Date(paste(date,"01", sep= "-"), format = "%Y-%m-%d")
+        ) %>%
+        dplyr::relocate(year_month, .before = everything())
+
       # Add data from this month (i) to overall area output (h)
       area_output <- dplyr::bind_rows(area_output, month_output)
 
@@ -1524,6 +1542,12 @@ get_msoa_data <- function(subset = NULL,
         number_months_acquired <- number_months_acquired + 1
       }
 
+      month_output <- month_output %>%
+        dplyr::mutate(
+          year_month = as.Date(paste(date,"01", sep= "-"), format = "%Y-%m-%d")
+        ) %>%
+        dplyr::relocate(year_month, .before = everything())
+
       # Add data from this month (i) to overall area output (h)
       area_output <- dplyr::bind_rows(area_output, month_output)
 
@@ -1923,6 +1947,12 @@ get_lsoa_data <- function(subset = NULL,
         number_months_acquired <- number_months_acquired + 1
       }
 
+      month_output <- month_output %>%
+        dplyr::mutate(
+          year_month = as.Date(paste(date,"01", sep= "-"), format = "%Y-%m-%d")
+        ) %>%
+        dplyr::relocate(year_month, .before = everything())
+
       # Add data from this month (i) to overall area output (h)
       area_output <- dplyr::bind_rows(area_output, month_output)
 
@@ -2321,6 +2351,12 @@ get_oa_data <- function(subset = NULL,
       if(nrow(month_output) > 0){
         number_months_acquired <- number_months_acquired + 1
       }
+
+      month_output <- month_output %>%
+        dplyr::mutate(
+          year_month = as.Date(paste(date,"01", sep= "-"), format = "%Y-%m-%d")
+        ) %>%
+        dplyr::relocate(year_month, .before = everything())
 
       # Add data from this month (i) to overall area output (h)
       area_output <- dplyr::bind_rows(area_output, month_output)
