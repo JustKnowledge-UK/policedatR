@@ -214,6 +214,9 @@ get_region_data <- function(subset = NULL,
       # those that include islands). The function therefore needs to search
       # each coordinate set within a LA separately.
 
+      # temporary fix to 429 error - make it wait and limit requests to 10 per second
+      Sys.sleep(0.1)  # 10 requests per second max
+
       # Identify the column number for geometry
       geometry_column_number <- which(colnames(geometries) == "geometry")
 
@@ -636,6 +639,9 @@ get_pfa_data <- function(subset = NULL,
 
       for(j in 1:length(geometries[[geometry_column_number]][[h]])){
 
+        # temporary fix to 429 error - make it wait and limit requests to 10 per second
+        Sys.sleep(0.1)  # 10 requests per second max
+
         # set this iteration's coordinate set
         # We must differentiate between polygons and multipolygons. When choosing
         # subsets it is possible the result will be polygon (where the area is just
@@ -1041,6 +1047,11 @@ get_lad_data <- function(subset = NULL,
       # Most LAs have only one coordinate set, but some have multiple (e.g.,
       # those that include islands). The function therefore needs to search
       # each coordinate set within a LA separately.
+
+
+      # temporary fix to 429 error - make it wait and limit requests to 10 per second
+      Sys.sleep(0.1)  # 10 requests per second max
+
 
       # Identify the column number for geometry
       geometry_column_number <- which(colnames(geometries) == "geometry")
@@ -1461,6 +1472,9 @@ get_msoa_data <- function(subset = NULL,
 
       for(j in 1:length(geometries[[geometry_column_number]][[h]])){
 
+        # temporary fix to 429 error - make it wait and limit requests to 10 per second
+        Sys.sleep(0.1)  # 10 requests per second max
+
         # set this iteration's coordinate set
         # We must differentiate between polygons and multipolygons. When choosing
         # subsets it is possible the result will be polygon (where the area is just
@@ -1867,6 +1881,9 @@ get_lsoa_data <- function(subset = NULL,
 
       for(j in 1:length(geometries[[geometry_column_number]][[h]])){
 
+        # temporary fix to 429 error - make it wait and limit requests to 10 per second
+        Sys.sleep(0.1)  # 10 requests per second max
+
         # set this iteration's coordinate set
         # We must differentiate between polygons and multipolygons. When choosing
         # subsets it is possible the result will be polygon (where the area is just
@@ -2270,6 +2287,9 @@ get_oa_data <- function(subset = NULL,
       coord_string <- c()
 
       for(j in 1:length(geometries[[geometry_column_number]][[h]])){
+
+        # temporary fix to 429 error - make it wait and limit requests to 10 per second
+        Sys.sleep(0.1)  # 10 requests per second max
 
         # set this iteration's coordinate set
         # We must differentiate between polygons and multipolygons. When choosing
