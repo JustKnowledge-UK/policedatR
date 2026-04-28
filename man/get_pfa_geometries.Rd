@@ -4,7 +4,7 @@
 \alias{get_pfa_geometries}
 \title{Get Police Force Area geometries}
 \usage{
-get_pfa_geometries(subset = NULL)
+get_pfa_geometries(subset = NULL, cache = TRUE)
 }
 \arguments{
 \item{subset}{A named list defining the areas for which to acquire geometries. Names

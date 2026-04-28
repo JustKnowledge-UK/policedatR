@@ -4,7 +4,7 @@
 \alias{get_lad_geometries}
 \title{Get Local Authority District geometries}
 \usage{
-get_lad_geometries(subset = NULL)
+get_lad_geometries(subset = NULL, cache = TRUE)
 }
 \arguments{
 \item{subset}{A named list defining the areas for which to acquire geometries. Names

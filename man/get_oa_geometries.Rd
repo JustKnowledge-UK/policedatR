@@ -4,7 +4,7 @@
 \alias{get_oa_geometries}
 \title{Get Output Area geometries}
 \usage{
-get_oa_geometries(subset = NULL)
+get_oa_geometries(subset = NULL, cache = TRUE)
 }
 \arguments{
 \item{subset}{A named list defining the areas for which to acquire geometries. Names
