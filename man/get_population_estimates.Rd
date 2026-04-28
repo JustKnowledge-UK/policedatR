@@ -4,7 +4,7 @@
 \alias{get_population_estimates}
 \title{Get population estimates}
 \usage{
-get_population_estimates(data, collapse_ethnicity)
+get_population_estimates(data, collapse_ethnicity, cache = TRUE)
 }
 \arguments{
 \item{data}{A data frame or tibble of data. This will usually be be an output

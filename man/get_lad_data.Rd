@@ -13,7 +13,8 @@ get_lad_data(
   most_recent_year = NULL,
   wait_time = 5,
   max_tries = 5,
-  include_no_stop_areas = TRUE
+  include_no_stop_areas = TRUE,
+  cache = TRUE
 )
 }
 \arguments{

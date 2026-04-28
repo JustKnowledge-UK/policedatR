@@ -4,7 +4,7 @@
 \alias{caching_check}
 \title{Check the caching status of API requests}
 \usage{
-caching_check(reset = FALSE)
+caching_check(cache = TRUE)
 }
 \arguments{
 \item{reset}{Boolean. If TRUE it will erase the previously set caching preference

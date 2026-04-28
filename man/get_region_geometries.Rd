@@ -4,7 +4,7 @@
 \alias{get_region_geometries}
 \title{Get Region geometries}
 \usage{
-get_region_geometries(subset = NULL)
+get_region_geometries(subset = NULL, cache = TRUE)
 }
 \arguments{
 \item{subset}{A named list defining the areas for which to acquire geometries. Names

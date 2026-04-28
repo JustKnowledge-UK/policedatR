@@ -4,7 +4,7 @@
 \alias{get_lsoa_geometries}
 \title{Get Lower layer Super Output Area geometries}
 \usage{
-get_lsoa_geometries(subset = NULL)
+get_lsoa_geometries(subset = NULL, cache = TRUE)
 }
 \arguments{
 \item{subset}{A named list defining the areas for which to acquire geometries. Names

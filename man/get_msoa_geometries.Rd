@@ -4,7 +4,7 @@
 \alias{get_msoa_geometries}
 \title{Get Middle layer Super Output Area geometries}
 \usage{
-get_msoa_geometries(subset = NULL)
+get_msoa_geometries(subset = NULL, cache = TRUE)
 }
 \arguments{
 \item{subset}{A named list defining the areas for which to acquire geometries. Names
