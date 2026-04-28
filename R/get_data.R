@@ -458,6 +458,7 @@ get_region_data <- function(subset = NULL,
 #' provide most comprehensive picture).
 #'
 #' @returns A data frame where each row is a separate stop and search record.
+#' @importFrom sf st_intersects
 #' @export
 #'
 #' @examples
@@ -489,13 +490,13 @@ get_pfa_data <- function(subset = NULL,
                          #n_records = 3 # For testing
 ){
 
+
   policedatR::caching_check(cache)
   caching <- Sys.getenv("caching")
   cache_dir <- Sys.getenv("cache_dir")
 
 
   #### Error handling ####
-
 
   # Make sure that user can't specify an incorrect time period
   # 1. Too many months backwards
@@ -546,7 +547,7 @@ get_pfa_data <- function(subset = NULL,
 
   #### Get geometries ####
 
-  geometries <- policedatR::get_pfa_geometries(subset)
+  # geometries <- policedatR::get_pfa_geometries(subset)
 
 
 
@@ -587,9 +588,16 @@ get_pfa_data <- function(subset = NULL,
 
   #### h loop: iterates over areas ####
 
+  # get the avaialable forces
 
-  for(h in 1:nrow(geometries)){
-    cat(paste0("\nStarted area ", h)) # report start (useful for debugging)
+  forces <- httr::content(
+    httr::GET("https://data.police.uk/api/forces"))
+
+  forces <- unlist(lapply(forces, function(l) l[[1]]))
+
+  for(h in 1:length(forces)){
+    force <- forces[h]
+    cat(paste0("\nStarted area ", h, ": ", force)) # report start (useful for debugging)
 
     area_output <- data.frame() # initialise area output df
     number_months_acquired <- 0 # initialise number of months acquired counter
@@ -605,8 +613,7 @@ get_pfa_data <- function(subset = NULL,
       if(i == 1){ # set values for first iteration
         month_num <- most_recent_month
         year <- most_recent_year
-      }
-      else{ # subsequent iterations
+      }else{ # subsequent iterations
         month_num <- month_num - 1 # backwards a month each iteration
         if(month_num %% 12 == 0){ # if reach a new year, start months from 12 again
           month_num <- 12
@@ -615,13 +622,11 @@ get_pfa_data <- function(subset = NULL,
       }
       if(month_num < 10){ # paste 0 for months lower than 10
         month <- paste("0", month_num, sep = "")
-      }
-      else{
+      }else{
         month <- month_num
       }
 
       date <- paste(year, "-", month, sep = "") # combine dates into one string
-
 
       #### j loop ####
 
@@ -631,87 +636,87 @@ get_pfa_data <- function(subset = NULL,
       # those that include islands). The function therefore needs to search
       # each coordinate set within a LA separately.
 
-      # Identify the column number for geometry
-      geometry_column_number <- which(colnames(geometries) == "geometry")
+      # # Identify the column number for geometry
+      # geometry_column_number <- which(colnames(geometries) == "geometry")
+      #
+      # # Initialise vector for coord string
+      # coord_string <- c()
+      #
+      # for(j in 1:length(geometries[[geometry_column_number]][[h]])){
+      #
+      #   # temporary fix to 429 error - make it wait and limit requests to 10 per second
+      #   Sys.sleep(0.1)  # 10 requests per second max
+      #
+      #   # set this iteration's coordinate set
+      #   # We must differentiate between polygons and multipolygons. When choosing
+      #   # subsets it is possible the result will be polygon (where the area is just
+      #   # polygon rather than multiple). If this is the case geometry is one list
+      #   # less nested than the multipolygon case
+      #   area_coords <- if(
+      #     # if the hth, jth element of the geometry column is a list, go a level deeper
+      #     # otherwise just pick the hth, jth elemen
+      #     is.list(geometries[[geometry_column_number]][[h]][[j]])){
+      #     geometries[[geometry_column_number]][[h]][[j]][[1]]
+      #   } else {
+      #     geometries[[geometry_column_number]][[h]][[j]]
+      #   }
+      #
+      #   area_coords <- area_coords %>%
+      #     tibble::as_tibble(.name_repair = ~c("long","lat"))
+      #   # long is e.g. -1.13
+      #   # lat is e.g. 52.62
+      #
+      # # Create an areas df with no geometry column as placeholder in case no
+      # # data found for this area. This is so we can still count areas where
+      # # no data was found. It's also to provide area info for lower geography
+      # # cases (not relevant for LADs)
+      # areas_df <- geometries[h,] %>%
+      #   sf::st_drop_geometry()
+      #
+      #   # combine coord strings into format required by API (much quicker than looping)
+      #   coord_string <- paste0(area_coords$lat,",",area_coords$long, collapse = ":")
 
-      # Initialise vector for coord string
-      coord_string <- c()
+      # create body for post request
+      body <- list("force" = force,
+                   "date" = date)
 
-      for(j in 1:length(geometries[[geometry_column_number]][[h]])){
-
-        # temporary fix to 429 error - make it wait and limit requests to 10 per second
-        Sys.sleep(0.1)  # 10 requests per second max
-
-        # set this iteration's coordinate set
-        # We must differentiate between polygons and multipolygons. When choosing
-        # subsets it is possible the result will be polygon (where the area is just
-        # polygon rather than multiple). If this is the case geometry is one list
-        # less nested than the multipolygon case
-        area_coords <- if(
-          # if the hth, jth element of the geometry column is a list, go a level deeper
-          # otherwise just pick the hth, jth elemen
-          is.list(geometries[[geometry_column_number]][[h]][[j]])){
-          geometries[[geometry_column_number]][[h]][[j]][[1]]
-        } else {
-          geometries[[geometry_column_number]][[h]][[j]]
-        }
-
-        area_coords <- area_coords %>%
-          tibble::as_tibble(.name_repair = ~c("long","lat"))
-        # long is e.g. -1.13
-        # lat is e.g. 52.62
-
-        # Create an areas df with no geometry column as placeholder in case no
-        # data found for this area. This is so we can still count areas where
-        # no data was found. It's also to provide area info for lower geography
-        # cases (not relevant for LADs)
-        areas_df <- geometries[h,] %>%
-          sf::st_drop_geometry()
-
-        # combine coord strings into format required by API (much quicker than looping)
-        coord_string <- paste0(area_coords$lat,",",area_coords$long, collapse = ":")
-
-        # create body for post request
-        body <- list("poly" = coord_string,
-                     "date" = date)
-
-        if(caching){
-          cd = cachem::cache_disk(cache_dir, evict = "lru")
-          # Memoise the function
-          fetch_police_data_memoised <- memoise::memoise(fetch_police_data, cache = cd)
-          post_request <- fetch_police_data_memoised(body = body)
-        }
-        else {
-          post_request <- fetch_police_data(body = body)
-        }
-
-        # get data from results of query
-        df <- httr::content(post_request)
-
-        # unlist data and convert to dataframe
-        df_2 <- lapply(df, unlist)
-        df_3 <- do.call(dplyr::bind_rows, df_2)
-        df_3$coord_set <- j # record which coordinate set data is from
-
-        # add results of this coordinate set iteration (j) to the output for
-        # this month iteration (i). Use bindrows for (high) possibility that columns
-        # from different iterations will be in different order/missing
-        month_output <- dplyr::bind_rows(month_output, df_3)
-
-        cat("\014") # clear console
-        # report overall (i.e., LA) progress
-        cat(paste0("Working... Area ", h, " of ", nrow(geometries),
-                   " (",
-                   round(100 * (h / nrow(geometries)), 2), "%)"))
-        # report month progress
-        cat(paste0("\nWorking... Month ", i, " of ", num_months_backwards,
-                   " (", date, ")"))
-        # report coordinate set progress
-        cat(paste0("\nWorking... ", j, " of ",
-                   length(geometries[[geometry_column_number]][[h]]),
-                   " coordinate sets retrieved"))
-
+      if(caching){
+        cd = cachem::cache_disk(cache_dir, evict = "lru")
+        # Memoise the function
+        fetch_police_data_memoised <- memoise::memoise(fetch_police_data_forces, cache = cd)
+        post_request <- fetch_police_data_memoised(body = body)
+      }else {
+        post_request <- fetch_police_data_forces(body = body)
       }
+
+
+      # get data from results of query
+      df <- httr::content(post_request)
+
+      # unlist data and convert to dataframe
+      df_2 <- lapply(df, unlist)
+      df_3 <- do.call(dplyr::bind_rows, df_2)
+      # df_3$coord_set <- j # record which coordinate set data is from
+
+      # add results of this coordinate set iteration (j) to the output for
+      # this month iteration (i). Use bindrows for (high) possibility that columns
+      # from different iterations will be in different order/missing
+      month_output <- dplyr::bind_rows(month_output, df_3)
+
+      cat("\014") # clear console
+      # report overall (i.e., LA) progress
+      cat(paste0("Working... Area ", h, " of ", length(forces),
+                 " (",
+                 round(100 * (h / length(forces)), 2), "%) - ", force))
+      # report month progress
+      cat(paste0("\nWorking... Month ", i, " of ", num_months_backwards,
+                 " (", date, ")"))
+      # report coordinate set progress
+      # cat(paste0("\nWorking... ", j, " of ",
+      #            length(geometries[[geometry_column_number]][[h]]),
+      #            " coordinate sets retrieved"))
+
+      # }
 
 
       #### End: Coordinate set loop (j) ####
@@ -732,6 +737,12 @@ get_pfa_data <- function(subset = NULL,
 
       # Add data from this month (i) to overall area output (h)
       area_output <- dplyr::bind_rows(area_output, month_output)
+      if(nrow(area_output > 0)){
+        area_output['force'] <- force
+      }
+
+      # here is the problem - trying to create the force variable where there's an empty  is none
+
 
     }
 
@@ -753,25 +764,24 @@ get_pfa_data <- function(subset = NULL,
     # }
     # print(nrow(area_output))
     # print(area_output)
-
     # If the area output is empty, no stops were found in the area.
     # where this is the case, report the area data, with NAs for the rest
     # and explicitly tag these areas as having no stops with stops_found = FALSE
-    if(include_no_stop_areas==TRUE){
-      if(nrow(area_output) == 0){
-        area_output <- areas_df %>% # add in all the area data by binding the columns for this area
-          dplyr::mutate(
-            stops_found = FALSE
-          )
-      } else{
-        # if stops were found for this area, add in the areas to the front
-        # and tag the rows with stops_found = TRUE
-        area_output <- dplyr::bind_cols(areas_df, area_output) %>%
-          dplyr::mutate(
-            stops_found = TRUE
-          )
-      }
-    }
+    # if(include_no_stop_areas==TRUE){
+    #   if(nrow(area_output) == 0){
+    #     area_output <- areas_df %>% # add in all the area data by binding the columns for this area
+    #       dplyr::mutate(
+    #         stops_found = FALSE
+    #       )
+    #   } else{
+    #     # if stops were found for this area, add in the areas to the front
+    #     # and tag the rows with stops_found = TRUE
+    #     area_output <- dplyr::bind_cols(areas_df, area_output) %>%
+    #       dplyr::mutate(
+    #         stops_found = TRUE
+    #       )
+    #   }
+    # }
 
 
     # if(nrow(area_output==0)){
@@ -812,36 +822,57 @@ get_pfa_data <- function(subset = NULL,
     # save(save_progress, file = "./save_progress.Rdata")
   }
 
+  geometries <- policedatR::get_pfa_geometries(subset) %>%
+    sf::st_make_valid() # ensure geometries are valid so sf is happy when we come to join
+
+  # Drop cases with no location info so we can join
+  overall_output <- overall_output %>%
+    dplyr::mutate(missing_coords = is.na(location.longitude) | is.na(location.latitude))
+
+  overall_output_sf <- overall_output %>%
+    dplyr::filter(!missing_coords) %>%
+    sf::st_as_sf(coords = c("location.longitude", "location.latitude"), crs = 4326)
+
+
+  joined <- sf::st_join(overall_output_sf, geometries, join = sf::st_intersects) %>%
+    sf::st_drop_geometry()
+
+  non_locations <- overall_output %>%
+    dplyr::filter(missing_coords) %>%
+    dplyr::select(-c(location.longitude, location.latitude))
+
+  final_output <- dplyr::bind_rows(joined, non_locations)
 
   #### End: Area loop (h) ####
 
 
   # Add in area lookup
   # First just get pfas and above from lookup
-  areas_above <- area_lookup %>%
-    dplyr::select(c(pfa22cd:rgn22nm)) %>%
-    dplyr::distinct()
-
-  # Then join
-  overall_output <- overall_output %>%
-    dplyr::left_join(areas_above, by = c("pfa22cd", "pfa22nm")) %>%
-    # Locate the area variables at the left of the dataframe
-    dplyr::relocate(c(rgn22cd:rgn22nm), .after = pfa22nm)
+  # areas_above <- area_lookup %>%
+  #   dplyr::select(c(pfa22cd:rgn22nm)) %>%
+  #   dplyr::distinct()
+  #
+  # # Then join
+  # overall_output <- overall_output %>%
+  #   dplyr::left_join(areas_above, by = c("pfa22cd", "pfa22nm")) %>%
+  #   # Locate the area variables at the left of the dataframe
+  #   dplyr::relocate(c(rgn22cd:rgn22nm), .after = pfa22nm)
 
   # If datetime exists in overall_output (and therefore stops were found),
   # relocate it. Otherwise don't try to relocate datetime (as it isn't there!)
-  if("datetime" %in% colnames(overall_output)){
-    overall_output <- overall_output %>%
-      dplyr::relocate(datetime, .after = rgn22nm)
-  }
+  # if("datetime" %in% colnames(overall_output)){
+  #   overall_output <- overall_output %>%
+  #     dplyr::relocate(datetime, .after = rgn22nm)
+  # }
 
   t2 <- Sys.time()
   time_elapsed <- difftime(t2, t1, units = "secs")
   cat(paste0("\nDone in ",round(time_elapsed, 3), " seconds"))
 
-  return(overall_output)
+  return(final_output)
 
 }
+
 
 #' Get stop and search data for Local Authority Districts
 #'
