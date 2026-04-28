@@ -139,7 +139,9 @@ fetch_police_data_forces <- function(body,
 fetch_geometry_data <- function(base_url,
                                 where_clause,
                                 result_offset = 0,
-                                max_records = 2000 # GeoPortal max records in single response is 2000
+                                max_records = 2000, # GeoPortal max records in single response is 2000
+                                max_retries = 3,
+                                retry_delay = 5
                                 ){
   params <- list(
     where = where_clause,  # Retrieve all records
@@ -150,34 +152,55 @@ fetch_geometry_data <- function(base_url,
     resultRecordCount = max_records
   )
 
-  # Initialise 504. Geoportal API saves 504 error to response content, so we
-  # have to look there for the error. But let's only look when it seems likely
-  # the request failed. we do this by using the length of the response - if it
-  # looks really short, it's probably failed, so take a look and see if indeed
-  # an error is reported
-  error_504 <- FALSE
+  attempt <- 0
 
-  response <- httr::GET(base_url, query = params)
+  while(attempt < max_retries){
+    attempt <- attempt + 1
 
-  if(length(response[["content"]]) < 1000){
-    peek_content <- httr::content(response, as = "text")
-    if(grepl("error", peek_content, ignore.case = TRUE) && grepl("504", peek_content)){
-      error_504 <- TRUE
-      #max_records <- max_records / 2
+    response <- httr::GET(base_url, query = params)
+
+    # Initialise 504. Geoportal API saves 504 error to response content, so we
+    # have to look there for the error. But let's only look when it seems likely
+    # the request failed. we do this by using the length of the response - if it
+    # looks really short, it's probably failed, so take a look and see if indeed
+    # an error is reported
+    error_504 <- FALSE
+    if(length(response[["content"]]) < 1000){
+      peek_content <- httr::content(response, as = "text")
+      if(grepl("error", peek_content, ignore.case = TRUE) && grepl("504", peek_content)){
+        error_504 <- TRUE
+        #max_records <- max_records / 2
+      }
+      else {
+        error_504 <- FALSE
+      }
     }
-    else {
-      error_504 <- FALSE
+
+    # if successful return immediately
+    if (httr::status_code(response) == 200 && error_504 == FALSE) { # add check in body for 504
+      return(response)
+      #content(response, "text")  # Convert response to text for caching
     }
-  }
-  if (httr::status_code(response) == 200 && error_504 == FALSE) { # add check in body for 504
-    return(response)
-    #content(response, "text")  # Convert response to text for caching
-  }
-  else {
-    stop(paste("Error: Status code ", httr::status_code(response)," (but body may contain 504)"))
+
+    status <- httr::status_code(response)
+    message(sprintf(
+      "Attempt %d/%d failed (HTTP %s%s). Retrying in %ds...",
+      attempt, max_retries, status,
+      if (error_504) " + 504 in body" else "",
+      retry_delay
+    ))
+
+    # wait some time before retrying
+    if (attempt < max_retries) Sys.sleep(retry_delay)
+
+
   }
 
-  return(response)
+  # Stop once max retries reached
+  stop(sprintf(
+    "All %d attempts failed for offset %d (last HTTP status: %s)",
+    max_retries, result_offset, httr::status_code(response)
+  ))
 }
 
 
