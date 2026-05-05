@@ -845,8 +845,7 @@ get_pfa_data <- function(subset = NULL,
 
   #### End: Area loop (h) ####
 
-  # browser()
-  # Add in area lookup - THIS DOESN'T WORK
+  # Add in area lookup
   # First just get pfas and above from lookup
   areas_above <- area_lookup %>%
     dplyr::select(c(pfa22cd:rgn22nm)) %>%
