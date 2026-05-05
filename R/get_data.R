@@ -845,25 +845,26 @@ get_pfa_data <- function(subset = NULL,
 
   #### End: Area loop (h) ####
 
-
-  # Add in area lookup
+  # browser()
+  # Add in area lookup - THIS DOESN'T WORK
   # First just get pfas and above from lookup
-  # areas_above <- area_lookup %>%
-  #   dplyr::select(c(pfa22cd:rgn22nm)) %>%
-  #   dplyr::distinct()
+  areas_above <- area_lookup %>%
+    dplyr::select(c(pfa22cd:rgn22nm)) %>%
+    dplyr::distinct()
   #
   # # Then join
-  # overall_output <- overall_output %>%
-  #   dplyr::left_join(areas_above, by = c("pfa22cd", "pfa22nm")) %>%
-  #   # Locate the area variables at the left of the dataframe
-  #   dplyr::relocate(c(rgn22cd:rgn22nm), .after = pfa22nm)
+  final_output <- final_output %>%
+    dplyr::left_join(areas_above, by = c("pfa22cd", "pfa22nm")) %>%
+    # Locate the area variables at the left of the dataframe
+    dplyr::relocate(c(rgn22cd:rgn22nm), .after = "pfa22nm") %>%
+    dplyr::relocate(c(pfa22cd:rgn22nm), .before = everything())
 
   # If datetime exists in overall_output (and therefore stops were found),
   # relocate it. Otherwise don't try to relocate datetime (as it isn't there!)
-  # if("datetime" %in% colnames(overall_output)){
-  #   overall_output <- overall_output %>%
-  #     dplyr::relocate(datetime, .after = rgn22nm)
-  # }
+  if("datetime" %in% colnames(final_output)){
+    final_output <- final_output %>%
+      dplyr::relocate(datetime, .after = rgn22nm)
+  }
 
   t2 <- Sys.time()
   time_elapsed <- difftime(t2, t1, units = "secs")
