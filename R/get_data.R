@@ -588,11 +588,19 @@ get_pfa_data <- function(subset = NULL,
 
   #### h loop: iterates over areas ####
 
-  # get the avaialable forces
+  # get the available forces
+  # uses a while loop with a wait time in case it hits a 429 'too many requests'
+  forces_request_status_code <- 0
 
-  forces <- httr::content(
-    httr::GET("https://data.police.uk/api/forces"))
+  while(forces_request_status_code != 200){
+    Sys.sleep(1)
+    forces_request <- httr::GET("https://data.police.uk/api/forces")
+    forces_request_status_code <- forces_request[["status_code"]]
+    print('Error')
 
+  }
+
+  forces <- httr::content(forces_request)
   forces <- unlist(lapply(forces, function(l) l[[1]]))
 
   for(h in 1:length(forces)){
